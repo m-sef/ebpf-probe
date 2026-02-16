@@ -34,9 +34,9 @@ def main() -> None:
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     hostname = socket.gethostname().split('.')[0]
 
-    #packet_counter_logger = init_logger(
-    #    "rx",
-    #    f"{hostname}-{interface}-{timestamp}.log")
+    logger = init_logger(
+        "rx",
+        f"{hostname}-{interface}-{timestamp}.log")
 
     src = Path('packet-counter.bpf.c').read_text()
     bpf = BPF(text=src)
@@ -44,13 +44,14 @@ def main() -> None:
 
     bpf.attach_xdp(interface, function, 0)
 
-    print("packets,bytes")
+    #print("packets,bytes")
 
     try:
         while True:
             time.sleep(1)
 
-            print(bpf['packets'][0].value, bpf['bytes'][0].value, sep=',');
+            #print(bpf['packets'][0].value, bpf['bytes'][0].value, sep=',');
+            logger.info(f"{bpf['packets'][0].value},{bpf['bytes'][0].value}")
     except KeyboardInterrupt:
         pass
 
