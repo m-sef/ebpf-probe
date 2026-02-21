@@ -1,4 +1,4 @@
-#!/user/bin/env python3
+#!/usr/bin/env python3
 import sys
 import socket
 import logging
@@ -6,6 +6,7 @@ from logging import Logger
 from datetime import datetime
 import time
 from bcc import BPF
+import ctypes
 from pathlib import Path
 
 def init_logger(
@@ -44,14 +45,29 @@ def main() -> None:
 
     bpf.attach_xdp(interface, function, 0)
 
-    #print("packets,bytes")
+    print("packets,bytes")
+
+    previous_packet_count = 0
+    previous_byte_count = 0
 
     try:
         while True:
             time.sleep(1)
 
-            #print(bpf['packets'][0].value, bpf['bytes'][0].value, sep=',');
-            logger.info(f"{bpf['packets'][0].value},{bpf['bytes'][0].value}")
+            current_packet_count = bpf['packets'][0].value
+            current_byte_count = bpf['bytes'][0].value
+
+            print(
+                current_packet_count - previous_packet_count,
+                current_byte_count - previous_byte_count,
+                sep=',');
+
+            logger.info(
+                f"{current_packet_count - previous_packet_count},"
+                f"{current_byte_count - previous_byte_count}")
+
+            previous_packet_count = current_packet_count
+            previous_byte_count = current_byte_count
     except KeyboardInterrupt:
         pass
 
