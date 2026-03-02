@@ -12,6 +12,7 @@
 int main(int argc, char** argv)
 {
     args_t args = make_default_args();
+    int spongebob = 0;
 
     if (!parse_args(argc, argv, &args) || args.help)
     {

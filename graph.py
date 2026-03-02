@@ -15,7 +15,7 @@ def main() -> None:
         "R100000.log"
     ]
 
-    figures, axes = plt.subplots(nrows=3, ncols=2, sharey=True)
+    figures, axes = plt.subplots(nrows=3, ncols=2)
     
     axes = axes.flatten()
 

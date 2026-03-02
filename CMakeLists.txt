@@ -8,9 +8,9 @@ set(BPF_OBJECT ${CMAKE_CURRENT_BINARY_DIR}/xdp_prog.bpf.o)
 add_custom_command(
     OUTPUT ${BPF_OBJECT}
     COMMAND clang
-        -g -O2
+        -g -Weverything -Werror -O0
         -target bpf
-        -I/usr/include
+        -I/usr/include/
         -I/usr/include/x86_64-linux-gnu
         -c ${BPF_SOURCE}
         -o ${BPF_OBJECT}
