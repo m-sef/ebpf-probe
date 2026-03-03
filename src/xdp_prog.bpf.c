@@ -5,6 +5,7 @@
 //#include <linux/icmp.h>
 #include <linux/in.h>
 #include <bpf/bpf_helpers.h>
+#include <bpf/bpf_endian.h>
 
 // Some sick and twisted linux developer has if.h, which is included by icmp.h,
 // include sys/socket.h (Which isn't usable here)
@@ -54,8 +55,8 @@ int xdp_prog(struct xdp_md* context)
 	if ((void*)icmp_header + sizeof(*icmp_header) > data_end)
 		return XDP_PASS;
 
-	void* payload = (void*)icmp_header + sizeof(*icmp_header);
-	int payload_size = data_end - payload;
+	int payload_size = bpf_ntohs(ip_header->tot_len) - sizeof(*ip_header) - sizeof(*icmp_header);
+	
 	packets_recieved += 1;
 	bytes_recieved += payload_size;
 	

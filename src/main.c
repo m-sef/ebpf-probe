@@ -1,7 +1,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <syslog.h>
 #include <net/if.h>
+
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
 
@@ -25,7 +27,6 @@ int main(int argc, char** argv)
 	if (!parse_args(argc, argv, &args) || args.help)
 	{
 		print_help(argv[0]);
-
 		return EXIT_FAILURE;
 	}
 
