@@ -25,7 +25,7 @@ struct icmphdr {
 			__be16	mtu;
 		} frag;
 		__u8	reserved[4];
-  } un;
+	} un;
 };
 
 char LICENSE[] SEC("license") = "GPL";
@@ -53,7 +53,7 @@ int xdp_prog(struct xdp_md* context)
 	if ((void*)icmp_header + sizeof(*icmp_header) > data_end)
 		return XDP_PASS;
 
-	void* payload = (void*)icmp_header + sizeof(icmp_header);
+	void* payload = (void*)icmp_header + sizeof(*icmp_header);
 	int payload_size = data_end - payload;
 	bytes_recieved += payload_size;
 	
