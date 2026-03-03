@@ -67,9 +67,15 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
+	uint64_t previous_bytes_recieved = 0;
 	while (true)
 	{
-		printf("Bytes Recieved: %lld\n", skeleton->bss->bytes_recieved);
+		uint64_t current_bytes_recieved = skeleton->bss->bytes_recieved;
+
+		printf("Bytes Recieved: %ld\n", current_bytes_recieved - previous_bytes_recieved);
+
+		previous_bytes_recieved = current_bytes_recieved;
+
 		sleep(1);
 	}
 
