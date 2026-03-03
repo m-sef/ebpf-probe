@@ -18,7 +18,7 @@
 
 int main(int argc, char** argv)
 {
-    uid_t euid = geteuid();
+	uid_t euid = geteuid();
 	args_t args = make_default_args();
 
 	if (!parse_args(argc, argv, &args) || args.help)
@@ -28,14 +28,14 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-    // Check if this program is being run as root
-    if (euid != 0)
-    {
-        printf("This program must be run as root\n");
-        return EXIT_FAILURE;
-    }
+	// Check if this program is being run as root
+	if (euid != 0)
+	{
+		printf("This program must be run as root\n");
+		return EXIT_FAILURE;
+	}
 
-    // Check if provided interface exists
+	// Check if provided interface exists
 	unsigned int interface_index = if_nametoindex(args.interface_name);
 	if (!interface_index)
 	{
@@ -43,28 +43,28 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-    // Open BPF application
-    struct xdp_prog_bpf* skeleton = xdp_prog_bpf__open();
-    if (!skeleton)
-    {
-        printf("Failed to open BPF skeleton\n");
-        return EXIT_FAILURE;
-    }
+	// Open BPF application
+	struct xdp_prog_bpf* skeleton = xdp_prog_bpf__open();
+	if (!skeleton)
+	{
+		printf("Failed to open BPF skeleton\n");
+		return EXIT_FAILURE;
+	}
 
-    // Load and verify BPF programs
-    if (xdp_prog_bpf__load(skeleton))
-    {
-        printf("Failed to load and verify BPF skeleton\n");
-        return EXIT_FAILURE;
-    }
+	// Load and verify BPF programs
+	if (xdp_prog_bpf__load(skeleton))
+	{
+		printf("Failed to load and verify BPF skeleton\n");
+		return EXIT_FAILURE;
+	}
 
-    // Attach tracepoint handler
-    if (xdp_prog_bpf__attach(skeleton))
-    {
-        printf("Failed to attach BPF skeleton\n");
-        return EXIT_FAILURE;
-    }
+	// Attach tracepoint handler
+	if (xdp_prog_bpf__attach(skeleton))
+	{
+		printf("Failed to attach BPF skeleton\n");
+		return EXIT_FAILURE;
+	}
 
-    xdp_prog_bpf__destroy(skeleton);
+	xdp_prog_bpf__destroy(skeleton);
 	return EXIT_SUCCESS;
 }
