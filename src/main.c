@@ -18,6 +18,7 @@
 
 int main(int argc, char** argv)
 {
+	int error = 0;
 	uid_t euid = geteuid();
 	args_t args = make_default_args();
 
@@ -52,17 +53,24 @@ int main(int argc, char** argv)
 	}
 
 	// Load and verify BPF programs
-	if (xdp_prog_bpf__load(skeleton))
+	error = xdp_prog_bpf__load(skeleton);
+	if (error)
 	{
 		printf("Failed to load and verify BPF skeleton\n");
 		return EXIT_FAILURE;
 	}
 
-	// Attach tracepoint handler
-	if (xdp_prog_bpf__attach(skeleton))
+	skeleton->links.xdp_prog = bpf_program__attach_xdp(skeleton->progs.xdp_prog, interface_index);
+	if (!skeleton->links.xdp_prog)
 	{
-		printf("Failed to attach BPF skeleton\n");
+		printf("Failed to attach XDP program");
 		return EXIT_FAILURE;
+	}
+
+	while (true)
+	{
+		printf("Bytes Recieved: %lld\n", skeleton->bss->bytes_recieved);
+		sleep(1);
 	}
 
 	xdp_prog_bpf__destroy(skeleton);

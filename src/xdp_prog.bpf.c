@@ -3,12 +3,13 @@
 
 char LICENSE[] SEC("license") = "GPL";
 
+__u64 bytes_recieved = 0;
+
 SEC("xdp")
 int xdp_prog(struct xdp_md* context)
 {
 	int packet_size = context->data_end - context->data;
-
-	bpf_printk("Packet Size: %d", packet_size);
+	bytes_recieved += packet_size;
 
 	return XDP_PASS;
 }
