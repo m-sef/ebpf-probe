@@ -67,13 +67,19 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
+	uint64_t previous_packets_recieved = 0;
 	uint64_t previous_bytes_recieved = 0;
 	while (true)
 	{
+		uint64_t current_packets_recieved = skeleton->bss->packets_recieved;
 		uint64_t current_bytes_recieved = skeleton->bss->bytes_recieved;
 
-		printf("Bytes Recieved: %ld\n", current_bytes_recieved - previous_bytes_recieved);
+		printf(
+			"%ld,%ld\n",
+			current_packets_recieved - previous_packets_recieved,
+			current_bytes_recieved - previous_bytes_recieved);
 
+		previous_packets_recieved = current_packets_recieved;
 		previous_bytes_recieved = current_bytes_recieved;
 
 		sleep(1);
