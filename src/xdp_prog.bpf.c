@@ -1,10 +1,14 @@
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
 
+char LICENSE[] SEC("license") = "GPL";
+
 SEC("xdp")
 int xdp_prog(struct xdp_md* context)
 {
-	bpf_trace_printk("Packet Size: %d", context->data_end - context->data);
+    int packet_size = context->data_end - context->data;
+
+	bpf_printk("Packet Size: %d", packet_size);
 
 	return XDP_PASS;
 }
