@@ -2,9 +2,20 @@ cmake_minimum_required(VERSION 3.28.3)
 
 project(packet_counter)
 
-set(BPF_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/xdp_prog.bpf.c)
-set(BPF_OBJECT ${CMAKE_CURRENT_BINARY_DIR}/xdp_prog.bpf.o)
-set(BPF_SKELETON ${CMAKE_CURRENT_SOURCE_DIR}/include/xdp_prog.skel.h)
+set(BPF_SOURCE ${CMAKE_SOURCE_DIR}/src/xdp_prog.bpf.c)
+set(BPF_OBJECT ${CMAKE_BINARY_DIR}/xdp_prog.bpf.o)
+set(BPF_SKELETON ${CMAKE_SOURCE_DIR}/include/xdp_prog.skel.h)
+set(VMLINUX_HEADER ${CMAKE_SOURCE_DIR}/include/vmlinux.h)
+
+#==============================================================================
+# Generate vmlinux.h using bpftool
+#==============================================================================
+add_custom_command(
+	OUTPUT ${VMLINUX_HEADER}
+	COMMAND bpftool
+		btf dump file /sys/kernel/btf/vmlinux format c > ${VMLINUX_HEADER}
+	DEPENDS /sys/kernel/btf/vmlinux
+)
 
 #==============================================================================
 # Generate object file from src/xdp_prog.bpf.c using clang compiler
@@ -14,15 +25,13 @@ add_custom_command(
 	COMMAND clang
 		-g -O2
 		-target bpf
-		-I/usr/include/
-		-I/usr/include/x86_64-linux-gnu
 		-I${CMAKE_SOURCE_DIR}/include
 		-c ${BPF_SOURCE}
 		-o ${BPF_OBJECT}
 	DEPENDS ${BPF_SOURCE}
 )
 
-add_custom_target(bpf_program ALL DEPENDS ${BPF_OBJECT})
+add_custom_target(bpf_object ALL DEPENDS ${VMLINUX_HEADER} ${BPF_OBJECT})
 
 #==============================================================================
 # Generate skeleton header file from xdp_prog.bpf.o using bpftool
@@ -44,5 +53,5 @@ target_include_directories(packet_counter PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(packet_counter PRIVATE bpf)
 target_compile_options(packet_counter PRIVATE -Wall -Werror -O3)
 
-add_dependencies(bpf_skeleton bpf_program)
+add_dependencies(bpf_skeleton bpf_object)
 add_dependencies(packet_counter bpf_skeleton)

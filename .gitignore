@@ -1,4 +1,5 @@
 /venv
 *.log
 /build
+/include/vmlinux.h
 /include/xdp_prog.skel.h
