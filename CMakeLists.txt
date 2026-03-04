@@ -16,6 +16,7 @@ add_custom_command(
         -target bpf
         -I/usr/include/
         -I/usr/include/x86_64-linux-gnu
+		-I${CMAKE_SOURCE_DIR}/include
         -c ${BPF_SOURCE}
         -o ${BPF_OBJECT}
     DEPENDS ${BPF_SOURCE}

@@ -1,7 +1,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <syslog.h>
 #include <net/if.h>
 
 #include <bpf/libbpf.h>
@@ -11,6 +10,12 @@
 
 #define REQUIRED_ARGS \
 	REQUIRED_STRING_ARG(interface_name, "interface", "Interface name")
+
+#define OPTIONAL_ARGS \
+	OPTIONAL_STRING_ARG(protocols, "HTTP,HTTPS", "-p", "protocol", "Protocols to capture") \
+	OPTIONAL_STRING_ARG(destination_ports, "80,443", "-d", "destination", "Destination ports to capture") \
+	OPTIONAL_STRING_ARG(source_ports, "", "-s", "source", "Source ports to capture") \
+	OPTIONAL_STRING_ARG(queues, "", "-q", "queue", "NIC queues to capture")
 
 #define BOOLEAN_ARGS \
 	BOOLEAN_ARG(verbose, "-v", "Enable verbose output") \
