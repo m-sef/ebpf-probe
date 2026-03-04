@@ -10,16 +10,16 @@ set(BPF_SKELETON ${CMAKE_CURRENT_SOURCE_DIR}/include/xdp_prog.skel.h)
 # Generate object file from src/xdp_prog.bpf.c using clang compiler
 #==============================================================================
 add_custom_command(
-    OUTPUT ${BPF_OBJECT}
-    COMMAND clang
-        -g -O2
-        -target bpf
-        -I/usr/include/
-        -I/usr/include/x86_64-linux-gnu
+	OUTPUT ${BPF_OBJECT}
+	COMMAND clang
+		-g -O2
+		-target bpf
+		-I/usr/include/
+		-I/usr/include/x86_64-linux-gnu
 		-I${CMAKE_SOURCE_DIR}/include
-        -c ${BPF_SOURCE}
-        -o ${BPF_OBJECT}
-    DEPENDS ${BPF_SOURCE}
+		-c ${BPF_SOURCE}
+		-o ${BPF_OBJECT}
+	DEPENDS ${BPF_SOURCE}
 )
 
 add_custom_target(bpf_program ALL DEPENDS ${BPF_OBJECT})
@@ -28,10 +28,10 @@ add_custom_target(bpf_program ALL DEPENDS ${BPF_OBJECT})
 # Generate skeleton header file from xdp_prog.bpf.o using bpftool
 #==============================================================================
 add_custom_command(
-    OUTPUT ${BPF_SKELETON}
-    COMMAND bpftool
-        gen skeleton ${BPF_OBJECT} > ${BPF_SKELETON}
-    DEPENDS ${BPF_OBJECT}
+	OUTPUT ${BPF_SKELETON}
+	COMMAND bpftool
+		gen skeleton ${BPF_OBJECT} > ${BPF_SKELETON}
+	DEPENDS ${BPF_OBJECT}
 )
 
 add_custom_target(bpf_skeleton ALL DEPENDS ${BPF_SKELETON})
