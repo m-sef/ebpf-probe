@@ -44,4 +44,5 @@ target_include_directories(packet_counter PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(packet_counter PRIVATE bpf)
 target_compile_options(packet_counter PRIVATE -Wall -Werror -O3)
 
+add_dependencies(bpf_skeleton bpf_program)
 add_dependencies(packet_counter bpf_skeleton)
