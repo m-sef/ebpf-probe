@@ -2,13 +2,12 @@
 #define SHARED_H
 
 struct key_t {
-	union {
-		__u16 source_port;
-		__u16 destination_port;
-	};
-	__u16 queue;
+	__u32 rx_queue_index;
+	__u32 source_ipv4_address;
+	__u32 destination_ipv4_address;
+	__u16 source_port;
+	__u16 destination_port;
 	__u8 protocol;
-	__u8 direction;
 };
 
 struct value_t {

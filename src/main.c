@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 	struct key_t key;
 	struct key_t next_key;
 
-	puts("timestamp,port,queue index,protocol,direction,total packets recieved,total bytes recieved");
+	puts("timestamp,queue index,ipv4 source address,source port,ipv4 destination address,destination port,protocol,total packets recieved,total bytes recieved");
 	
 	while (true)
 	{
@@ -97,15 +97,26 @@ int main(int argc, char** argv)
 
 			bpf_map__lookup_elem(map, &key, sizeof(key), &value, sizeof(value), 0);
 
-			printf(
-				"%s,%d,%d,%d,%d,%lld,%lld\n",
-				timestamp_buffer,
-				key.destination_port,
-				key.queue,
-				key.protocol,
-				key.direction,
-				value.total_packets_recieved,
-				value.total_bytes_recieved);
+			/* Print timestamp */
+			printf("%s,", timestamp_buffer);
+
+			/* Print NIC recieve queue */
+			printf("%d,", key.rx_queue_index);
+
+			/* Print destination socket information */
+			printf("%x,", key.destination_ipv4_address);
+			printf("%d,", key.destination_port);
+
+			/* Print source socket information */
+			printf("%x,", key.source_ipv4_address);
+			printf("%d,", key.source_port);
+
+			/* Print protocol */
+			printf("%d,", key.protocol);
+
+			/* Print throughput information */
+			printf("%lld,", value.total_packets_recieved);
+			printf("%lld\n", value.total_bytes_recieved);
 
 			error = bpf_map__get_next_key(map, &key, &next_key, sizeof(key));
 			key = next_key;

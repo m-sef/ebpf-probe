@@ -30,10 +30,12 @@ int xdp_prog(struct xdp_md* context)
 		return XDP_PASS;
 
 	struct key_t key = {
+		.rx_queue_index = context->rx_queue_index,
+		.source_ipv4_address = bpf_ntohs(ipv4_header->saddr),
+		.destination_ipv4_address = bpf_ntohs(ipv4_header->daddr),
+		.source_port = 0,
 		.destination_port = 0,
-		.queue = context->rx_queue_index,
-		.protocol = ipv4_header->protocol,
-		.direction = 0
+		.protocol = ipv4_header->protocol
 	};
 
 	/* Handle UDP packets */
@@ -43,6 +45,7 @@ int xdp_prog(struct xdp_md* context)
 		if ((void*)udp_header + sizeof(*udp_header) > data_end)
 			return XDP_PASS;
 		
+		key.source_port = bpf_ntohs(udp_header->source);
 		key.destination_port = bpf_ntohs(udp_header->dest);
 	}
 
@@ -53,6 +56,7 @@ int xdp_prog(struct xdp_md* context)
 		if ((void*)tcp_header + sizeof(*tcp_header) > data_end)
 			return XDP_PASS;
 
+		key.source_port = bpf_ntohs(tcp_header->source);
 		key.destination_port = bpf_ntohs(tcp_header->dest);
 	}
 
