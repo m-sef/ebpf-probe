@@ -29,10 +29,7 @@ int xdp_prog(struct xdp_md* context)
 	if ((void*)ipv4_header + sizeof(*ipv4_header) > data_end)
 		return XDP_PASS;
 
-	if (ipv4_header->protocol != IPPROTO_ICMP)
-		return XDP_PASS;
-
-	struct key_t temp_key = {
+	struct key_t key = {
 		.destination_port = 0,
 		.queue = context->rx_queue_index,
 		.protocol = ipv4_header->protocol,
@@ -46,7 +43,7 @@ int xdp_prog(struct xdp_md* context)
 		if ((void*)udp_header + sizeof(*udp_header) > data_end)
 			return XDP_PASS;
 		
-		temp_key.destination_port = udp_header->dest;
+		key.destination_port = udp_header->dest;
 	}
 
 	/* Handle TCP packets */
@@ -56,16 +53,24 @@ int xdp_prog(struct xdp_md* context)
 		if ((void*)tcp_header + sizeof(*tcp_header) > data_end)
 			return XDP_PASS;
 
-		temp_key.destination_port = tcp_header->dest;
+		key.destination_port = tcp_header->dest;
 	}
-	
 
-	struct value_t temp_value = {
-		.total_bytes_recieved = 0xFFFFFFFF,
-		.total_packets_recieved = 0xFFFFFFFF
-	};
+	struct value_t* value = bpf_map_lookup_elem(&throughput_map, &key);
+	if (value)
+	{
+		value->total_packets_recieved++;
+		value->total_bytes_recieved += data_end - data;
+	}
+	else
+	{
+		struct value_t new_value = {
+			.total_packets_recieved = 1,
+			.total_bytes_recieved = data_end - data
+		};
 
-	bpf_map_update_elem(&throughput_map, &temp_key, &temp_value, BPF_ANY);
+		bpf_map_update_elem(&throughput_map, &key, &new_value, BPF_ANY);
+	}
 	
 	return XDP_PASS;
 }

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <net/if.h>
+#include <time.h>
 
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
@@ -36,14 +37,14 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	// Check if this program is being run as root
+	/* Check if the program is being run as root. */
 	if (euid != 0)
 	{
 		printf("This program must be run as root\n");
 		return EXIT_FAILURE;
 	}
 
-	// Check if provided interface exists
+	/* Check if provided interface exists */
 	unsigned int interface_index = if_nametoindex(args.interface_name);
 	if (!interface_index)
 	{
@@ -51,7 +52,7 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	// Open BPF application
+	/* Open BPF application */
 	struct xdp_prog_bpf* skeleton = xdp_prog_bpf__open();
 	if (!skeleton)
 	{
@@ -59,7 +60,7 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	// Load and verify BPF programs
+	/* Load and verify BPF programs */
 	error = xdp_prog_bpf__load(skeleton);
 	if (error)
 	{
@@ -67,6 +68,7 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
+	/* Attach BPF program to specified interface */
 	skeleton->links.xdp_prog = bpf_program__attach_xdp(skeleton->progs.xdp_prog, interface_index);
 	if (!skeleton->links.xdp_prog)
 	{
@@ -77,28 +79,36 @@ int main(int argc, char** argv)
 	struct bpf_map* map = bpf_object__find_map_by_name(skeleton->obj, "throughput_map");
 	struct key_t key;
 	struct key_t next_key;
-	//struct value_t value;
 	
 	while (true)
 	{
-		error = bpf_map__get_next_key(map, NULL, &key, sizeof(struct key_t));
+		time_t now = time(NULL);
+		struct tm* time_info = localtime(&now);
+		char timestamp_buffer[20];
+
+		strftime(timestamp_buffer, sizeof(timestamp_buffer), "%Y-%m-%d_%H-%M-%S", time_info);
+
+		error = bpf_map__get_next_key(map, NULL, &key, sizeof(key));
 		while(!error)
 		{
+			struct value_t value;
+
+			bpf_map__lookup_elem(map, &key, sizeof(key), &value, sizeof(value), 0);
+
 			printf(
-				"%d,%d,%d,%d\n",
+				"%s,%d,%d,%d,%d,%lld,%lld\n",
+				timestamp_buffer,
 				key.destination_port,
 				key.queue,
 				key.protocol,
-				key.direction);
+				key.direction,
+				value.total_packets_recieved,
+				value.total_bytes_recieved);
 
-			next_key = key;
-			error = bpf_map__get_next_key(map, &key, &next_key, sizeof(struct key_t));
+			error = bpf_map__get_next_key(map, &key, &next_key, sizeof(key));
+			key = next_key;
 		}
 
-		puts("...");
-		//bpf_map_lookup_elem(map_fd, &key, &value);
-
-		//printf("%lld\n", temp.total_bytes_recieved);
 		sleep(1);
 	}
 
