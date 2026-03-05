@@ -79,6 +79,8 @@ int main(int argc, char** argv)
 	struct bpf_map* map = bpf_object__find_map_by_name(skeleton->obj, "throughput_map");
 	struct key_t key;
 	struct key_t next_key;
+
+	puts("timestamp,port,queue index,protocol,direction,total packets recieved,total bytes recieved");
 	
 	while (true)
 	{
@@ -86,7 +88,7 @@ int main(int argc, char** argv)
 		struct tm* time_info = localtime(&now);
 		char timestamp_buffer[20];
 
-		strftime(timestamp_buffer, sizeof(timestamp_buffer), "%Y-%m-%d_%H-%M-%S", time_info);
+		strftime(timestamp_buffer, sizeof(timestamp_buffer), "%Y-%m-%d %H-%M-%S", time_info);
 
 		error = bpf_map__get_next_key(map, NULL, &key, sizeof(key));
 		while(!error)
