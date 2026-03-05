@@ -23,6 +23,23 @@
 
 #include "easyargs.h"
 
+enum direction_t { SOURCE, DESTINATION };
+
+struct key_t {
+	union {
+		__u16 source_port;
+		__u16 destination_port;
+	};
+	__u16 queue;
+	__u8 protocol;
+	__u8 direction;
+};
+
+struct value_t {
+	__u64 total_packets_recieved;
+	__u64 total_bytes_recieved;
+};
+
 int main(int argc, char** argv)
 {
 	int error = 0;
@@ -73,12 +90,21 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	//struct ket_t key = {0};
-	//int cpu_count = bpf_num_possible_cpus();
-	//struct value_t values[cpu_count];
+	//int map_fd = bpf_object__find_map_fd_by_name(skeleton->obj, "throughput_map");
+	//struct key_t key;
+//	struct key_t next_key;
+	//struct value_t value;
+	
+	printf("Help???");
 
 	while (true)
 	{
+
+		printf("Something...");
+
+		//bpf_map_lookup_elem(map_fd, &key, &value);
+
+		//printf("%lld\n", temp.total_bytes_recieved);
 		sleep(1);
 	}
 
