@@ -11,8 +11,8 @@ def main() -> None:
     data_frame = data_frame.groupby('timestamp')[['total_packets_recieved', 'total_bytes_recieved']].sum().reset_index()
 
     plt.plot(
-        pd.to_datetime(data_frame['timestamp'], format="%Y-%m-%d %H-%M-%S"),
-        data_frame['total_packets_recieved'])
+        pd.to_datetime(data_frame['timestamp'], format="%Y-%m-%d %H:%M:%S"),
+        data_frame['total_packets_recieved'].diff())
 
     plt.title(file_path)
     plt.xlabel("Time")

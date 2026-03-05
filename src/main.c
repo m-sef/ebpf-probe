@@ -88,7 +88,7 @@ int main(int argc, char** argv)
 		struct tm* time_info = localtime(&now);
 		char timestamp_buffer[20];
 
-		strftime(timestamp_buffer, sizeof(timestamp_buffer), "%Y-%m-%d %H-%M-%S", time_info);
+		strftime(timestamp_buffer, sizeof(timestamp_buffer), "%Y-%m-%d %H:%M:%S", time_info);
 
 		error = bpf_map__get_next_key(map, NULL, &key, sizeof(key));
 		while(!error)
