@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 	struct key_t key;
 	struct key_t next_key;
 
-	puts("timestamp,queue index,ipv4 source address,source port,ipv4 destination address,destination port,protocol,total packets recieved,total bytes recieved");
+	puts("timestamp,rx_queue_index,ipv4_source_address,source_port,ipv4_destination_address,destination_port,protocol,total_packets_recieved,total_bytes_recieved");
 	
 	while (true)
 	{
@@ -104,11 +104,11 @@ int main(int argc, char** argv)
 			printf("%d,", key.rx_queue_index);
 
 			/* Print destination socket information */
-			printf("%x,", key.destination_ipv4_address);
+			printf("%d,", key.destination_ipv4_address);
 			printf("%d,", key.destination_port);
 
 			/* Print source socket information */
-			printf("%x,", key.source_ipv4_address);
+			printf("%d,", key.source_ipv4_address);
 			printf("%d,", key.source_port);
 
 			/* Print protocol */
@@ -121,6 +121,8 @@ int main(int argc, char** argv)
 			error = bpf_map__get_next_key(map, &key, &next_key, sizeof(key));
 			key = next_key;
 		}
+
+		printf("# entry_count=%lld\n", skeleton->bss->entry_count);
 
 		sleep(1);
 	}

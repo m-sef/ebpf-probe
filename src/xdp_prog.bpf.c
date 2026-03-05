@@ -11,6 +11,8 @@ struct {
 	__uint(max_entries, 65536);
 } throughput_map SEC(".maps");
 
+__u64 entry_count = 0;
+
 SEC("xdp")
 int xdp_prog(struct xdp_md* context)
 {
@@ -72,6 +74,8 @@ int xdp_prog(struct xdp_md* context)
 			.total_packets_recieved = 1,
 			.total_bytes_recieved = data_end - data
 		};
+
+		entry_count++;
 
 		bpf_map_update_elem(&throughput_map, &key, &new_value, BPF_ANY);
 	}
