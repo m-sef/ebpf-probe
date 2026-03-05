@@ -43,7 +43,7 @@ int xdp_prog(struct xdp_md* context)
 		if ((void*)udp_header + sizeof(*udp_header) > data_end)
 			return XDP_PASS;
 		
-		key.destination_port = udp_header->dest;
+		key.destination_port = bpf_ntohs(udp_header->dest);
 	}
 
 	/* Handle TCP packets */
@@ -53,7 +53,7 @@ int xdp_prog(struct xdp_md* context)
 		if ((void*)tcp_header + sizeof(*tcp_header) > data_end)
 			return XDP_PASS;
 
-		key.destination_port = tcp_header->dest;
+		key.destination_port = bpf_ntohs(tcp_header->dest);
 	}
 
 	struct value_t* value = bpf_map_lookup_elem(&throughput_map, &key);
