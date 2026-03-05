@@ -1,23 +1,7 @@
 #include "vmlinux.h"
+#include "shared.h"
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
-
-enum direction_t { SOURCE, DESTINATION };
-
-struct key_t {
-	union {
-		__u16 source_port;
-		__u16 destination_port;
-	};
-	__u16 queue;
-	__u8 protocol;
-	__u8 direction;
-};
-
-struct value_t {
-	__u64 total_packets_recieved;
-	__u64 total_bytes_recieved;
-};
 
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
@@ -49,11 +33,33 @@ int xdp_prog(struct xdp_md* context)
 		return XDP_PASS;
 
 	struct key_t temp_key = {
-		.destination_port = 80,
-		.queue = 0,
-		.protocol = 1,
+		.destination_port = 0,
+		.queue = context->rx_queue_index,
+		.protocol = ipv4_header->protocol,
 		.direction = 0
 	};
+
+	/* Handle UDP packets */
+	if (ipv4_header->protocol == IPPROTO_UDP)
+	{
+		struct udphdr* udp_header = (void*)ipv4_header + sizeof(*ipv4_header);
+		if ((void*)udp_header + sizeof(*udp_header) > data_end)
+			return XDP_PASS;
+		
+		temp_key.destination_port = udp_header->dest;
+	}
+
+	/* Handle TCP packets */
+	if (ipv4_header->protocol == IPPROTO_TCP)
+	{
+		struct tcphdr* tcp_header = (void*)ipv4_header + sizeof(*ipv4_header);
+		if ((void*)tcp_header + sizeof(*tcp_header) > data_end)
+			return XDP_PASS;
+
+		temp_key.destination_port = tcp_header->dest;
+	}
+	
+
 	struct value_t temp_value = {
 		.total_bytes_recieved = 0xFFFFFFFF,
 		.total_packets_recieved = 0xFFFFFFFF

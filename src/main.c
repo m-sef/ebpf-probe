@@ -22,23 +22,7 @@
 	BOOLEAN_ARG(help, "-h", "Show help")
 
 #include "easyargs.h"
-
-enum direction_t { SOURCE, DESTINATION };
-
-struct key_t {
-	union {
-		__u16 source_port;
-		__u16 destination_port;
-	};
-	__u16 queue;
-	__u8 protocol;
-	__u8 direction;
-};
-
-struct value_t {
-	__u64 total_packets_recieved;
-	__u64 total_bytes_recieved;
-};
+#include "shared.h"
 
 int main(int argc, char** argv)
 {
@@ -90,18 +74,28 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	//int map_fd = bpf_object__find_map_fd_by_name(skeleton->obj, "throughput_map");
-	//struct key_t key;
-//	struct key_t next_key;
+	struct bpf_map* map = bpf_object__find_map_by_name(skeleton->obj, "throughput_map");
+	struct key_t key;
+	struct key_t next_key;
 	//struct value_t value;
 	
-	printf("Help???");
-
 	while (true)
 	{
+		error = bpf_map__get_next_key(map, NULL, &key, sizeof(struct key_t));
+		while(!error)
+		{
+			printf(
+				"%d,%d,%d,%d\n",
+				key.destination_port,
+				key.queue,
+				key.protocol,
+				key.direction);
 
-		printf("Something...");
+			next_key = key;
+			error = bpf_map__get_next_key(map, &key, &next_key, sizeof(struct key_t));
+		}
 
+		puts("...");
 		//bpf_map_lookup_elem(map_fd, &key, &value);
 
 		//printf("%lld\n", temp.total_bytes_recieved);
