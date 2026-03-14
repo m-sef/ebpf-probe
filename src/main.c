@@ -8,7 +8,7 @@ static int handle_record(void* context, void* data, size_t size)
 {
     struct packet_info_t* info = data;
 
-    printf("src: %u.%u.%u.%u:%u -> dst: %u.%u.%u.%u:%u (proto: %u)\n",
+    printf("%03u.%03u.%03u.%03u:%-5u -> %03u.%03u.%03u.%03u:%-5u (proto: %u) (size: %llu)\n",
         (info->source_ipv4_address) & 0xFF,
         (info->source_ipv4_address >> 8)  & 0xFF,
         (info->source_ipv4_address >> 16) & 0xFF,
@@ -19,14 +19,15 @@ static int handle_record(void* context, void* data, size_t size)
         (info->destination_ipv4_address >> 16) & 0xFF,
         (info->destination_ipv4_address >> 24) & 0xFF,
         info->destination_port,
-        info->protocol);
+        info->protocol,
+		info->size);
 
     return 0;
 }
 
 int main(int argc, char** argv)
 {
-	struct xdp_prog_bpf* skeleton = ebpf_probe_init("lo");
+	struct xdp_prog_bpf* skeleton = ebpf_probe_init("enp0s31f6");
 	if (!skeleton)
 		return EXIT_FAILURE;
 
