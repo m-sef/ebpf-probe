@@ -3,12 +3,10 @@
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
 
-#define ETH_P_IP 0x0800
-
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 1 << 24);
-} ring_buffer SEC(".maps");
+} packet_info_ring_buffer SEC(".maps");
 
 SEC("xdp")
 int xdp_prog(struct xdp_md* context)
@@ -21,7 +19,7 @@ int xdp_prog(struct xdp_md* context)
 		return XDP_PASS;
 
 	/* Only handling IPv4 packets */
-	if (ethernet_header->h_proto != bpf_ntohs(ETH_P_IP))
+	if (ethernet_header->h_proto != bpf_ntohs(0x0800))
 		return XDP_PASS;
 
 	struct iphdr* ipv4_header = data + sizeof(*ethernet_header);
@@ -31,8 +29,8 @@ int xdp_prog(struct xdp_md* context)
 	struct packet_info_t packet_info = {
 		.size = data_end - data,
 		.rx_queue_index = context->rx_queue_index,
-		.source_ipv4_address = bpf_ntohs(ipv4_header->saddr),
-		.destination_ipv4_address = bpf_ntohs(ipv4_header->daddr),
+		.source_ipv4_address = ipv4_header->saddr,
+		.destination_ipv4_address = ipv4_header->daddr,
 		.source_port = 0,
 		.destination_port = 0,
 		.protocol = ipv4_header->protocol
@@ -60,7 +58,7 @@ int xdp_prog(struct xdp_md* context)
 		packet_info.destination_port = bpf_ntohs(tcp_header->dest);
 	}
 
-	struct packet_info_t* record = bpf_ringbuf_reserve(&ring_buffer, sizeof(*record), 0);
+	struct packet_info_t* record = bpf_ringbuf_reserve(&packet_info_ring_buffer, sizeof(*record), 0);
 	if (!record)
 		return XDP_PASS;
 

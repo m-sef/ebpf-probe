@@ -1,14 +1,16 @@
 #ifndef SHARED_H
 #define SHARED_H
 
+#include <stdint.h>
+
 struct packet_info_t {
-	__u64 size;
-	__u32 rx_queue_index;
-	__u32 source_ipv4_address;
-	__u32 destination_ipv4_address;
-	__u16 source_port;
-	__u16 destination_port;
-	__u8 protocol;
+	uint64_t size;
+	uint32_t rx_queue_index;
+	uint32_t source_ipv4_address;
+	uint32_t destination_ipv4_address;
+	uint16_t source_port;
+	uint16_t destination_port;
+	uint8_t protocol;
 };
 
 #endif
