@@ -48,7 +48,7 @@ add_custom_target(bpf_skeleton ALL DEPENDS ${BPF_SKELETON})
 #==============================================================================
 # Compile userspace program
 #==============================================================================
-add_executable(packet_counter src/main.c)
+add_executable(packet_counter src/main.c src/ebpf_probe.c)
 target_include_directories(packet_counter PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(packet_counter PRIVATE bpf)
 target_compile_options(packet_counter PRIVATE -Wall -Werror -O3)
