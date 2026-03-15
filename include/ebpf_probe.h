@@ -5,18 +5,13 @@
 
 struct ebpf_probe;
 
-struct ebpf_probe* ebpf_probe_init(
+struct ebpf_probe* ebpf_probe__init(
 	const char* interface_name);
 
-void ebpf_probe_destroy(
+void ebpf_probe__destroy(
 	struct ebpf_probe* ebpf_probe);
 
-void ebpf_probe_read_from_packet_info_ring_buffer(
+void ebpf_probe__flush_packet_info_ring_buffer(
 	struct ebpf_probe* ebpf_probe);
-
-void ebpf_probe_flush_packet_info_ring_buffer(
-	struct ebpf_probe* ebpf_probe,
-	struct packet_info_t* buffer,
-	size_t* buffer_size);
 
 #endif

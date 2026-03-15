@@ -19,7 +19,7 @@ static int handle_record(void* context, void* data, size_t size)
 {
     struct packet_info_t* info = data;
 
-    printf("%03u.%03u.%03u.%03u:%-5u->%03u.%03u.%03u.%03u:%-5u rx_queue_index: %-9u protocol: %-3u size: %lu\n",
+    printf("%3u.%03u.%03u.%03u:%-5u->%3u.%03u.%03u.%03u:%-5u rx_queue_index: %-9u protocol: %-3u size: %lu\n",
         (info->source_ipv4_address)            & 0xFF,
         (info->source_ipv4_address >> 8)       & 0xFF,
         (info->source_ipv4_address >> 16)      & 0xFF,
@@ -37,7 +37,7 @@ static int handle_record(void* context, void* data, size_t size)
     return 0;
 }
 
-struct ebpf_probe* ebpf_probe_init(
+struct ebpf_probe* ebpf_probe__init(
 	const char* interface_name)
 {
 	if (geteuid() != 0)
@@ -88,7 +88,7 @@ struct ebpf_probe* ebpf_probe_init(
 	return ebpf_probe;
 }
 
-void ebpf_probe_destroy(
+void ebpf_probe__destroy(
 	struct ebpf_probe* ebpf_probe)
 {
 	ring_buffer__free(ebpf_probe->packet_info_ring_buffer);
@@ -96,8 +96,9 @@ void ebpf_probe_destroy(
 	free(ebpf_probe);
 }
 
-void ebpf_probe_read_from_packet_info_ring_buffer(
+void ebpf_probe__flush_packet_info_ring_buffer(
 	struct ebpf_probe* ebpf_probe)
 {
-	ring_buffer__poll(ebpf_probe->packet_info_ring_buffer, 100);
+	if (!ring_buffer__consume(ebpf_probe->packet_info_ring_buffer))
+		usleep(1000); // Sleep for 1ms if no data was consumed, as to not max out CPU usage
 }
