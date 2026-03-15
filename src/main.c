@@ -18,6 +18,8 @@ int main(int argc, char** argv)
 	}
 
 	struct ebpf_probe* ebpf_probe = ebpf_probe__init(args.interface_name);
+	if (!ebpf_probe)
+		return EXIT_FAILURE;
 
 	while (1)
 		ebpf_probe__flush_packet_info_ring_buffer(ebpf_probe);
