@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-struct packet_info_t {
+typedef struct packet_info_t {
 	uint64_t size;
 	uint32_t rx_queue_index;
 	uint32_t source_ipv4_address;
@@ -11,6 +11,6 @@ struct packet_info_t {
 	uint16_t source_port;
 	uint16_t destination_port;
 	uint8_t protocol;
-};
+} packet_info_t;
 
 #endif
