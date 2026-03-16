@@ -8,23 +8,33 @@
 #include "easyargs.h"
 #include "ebpf_probe.h"
 
+static void ipv4_address_to_string(
+	char* buffer,
+	const size_t buffer_size,
+	const uint32_t ipv4_address)
+{
+	snprintf(buffer, buffer_size, "%u.%u.%u.%u",
+		  (ipv4_address)       & 0xFF,
+		  (ipv4_address >> 8)  & 0xFF,
+		  (ipv4_address >> 16) & 0xFF,
+		  (ipv4_address >> 24) & 0xFF);
+}
+
 static int handle_record(void* context, void* data, size_t size)
 {
 	struct packet_info_t* info = data;
+	char source_ipv4_address_as_string[16];
+	char destination_ipv4_address_as_string[16];
+	ipv4_address_to_string(source_ipv4_address_as_string, 16, info->source_ipv4_address);
+	ipv4_address_to_string(destination_ipv4_address_as_string, 16, info->destination_ipv4_address);
 
-    printf("%3u.%03u.%03u.%03u:%-5u->%3u.%03u.%03u.%03u:%-5u rx_queue_index: %-9u protocol: %-3u size: %lu\n",
-        (info->source_ipv4_address)            & 0xFF,
-        (info->source_ipv4_address >> 8)       & 0xFF,
-        (info->source_ipv4_address >> 16)      & 0xFF,
-        (info->source_ipv4_address >> 24)      & 0xFF,
-        info->source_port,
-        (info->destination_ipv4_address)       & 0xFF,
-        (info->destination_ipv4_address >> 8)  & 0xFF,
-        (info->destination_ipv4_address >> 16) & 0xFF,
-        (info->destination_ipv4_address >> 24) & 0xFF,
-        info->destination_port,
+	printf("%15s:%-5u->%15s:%-5u rx_queue_index: %-9u protocol: %-3u size: %llu\n",
+		source_ipv4_address_as_string,
+		info->source_port,
+		destination_ipv4_address_as_string,
+		info->destination_port,
 		info->rx_queue_index,
-        info->protocol,
+		info->protocol,
 		info->size);
 
 	return 0;
@@ -44,7 +54,7 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 
 	while (1)
-		ebpf_probe__flush_packet_info_ring_buffer(ebpf_probe);
+		ebpf_probe__flush_buffer(ebpf_probe);
 
 	ebpf_probe__destroy(ebpf_probe);
 

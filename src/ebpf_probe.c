@@ -35,17 +35,10 @@ struct ebpf_probe* ebpf_probe__init(
 		return NULL;
 	}
 	
-	struct xdp_prog_bpf* skeleton = xdp_prog_bpf__open();
+	struct xdp_prog_bpf* skeleton = xdp_prog_bpf__open_and_load();
 	if (!skeleton)
 	{
-		fprintf(stderr, "Failed to open BPF skeleton\n");
-		return NULL;
-	}
-
-	int error = xdp_prog_bpf__load(skeleton);
-	if (error)
-	{
-		fprintf(stderr, "Failed to load and verify BPF skeleton\n");
+		fprintf(stderr, "Failed to open and/or load BPF object\n");
 		xdp_prog_bpf__destroy(skeleton);
 		return NULL;
 	}
@@ -80,7 +73,7 @@ void ebpf_probe__destroy(
 	free(ebpf_probe);
 }
 
-void ebpf_probe__flush_packet_info_ring_buffer(
+void ebpf_probe__flush_buffer(
 	struct ebpf_probe* ebpf_probe)
 {
 	if (!ring_buffer__consume(ebpf_probe->packet_info_ring_buffer))

@@ -42,6 +42,6 @@ func main() {
 	defer C.ebpf_probe__destroy(ebpf_probe)
 
 	for {
-		C.ebpf_probe__flush_packet_info_ring_buffer(ebpf_probe)
+		C.ebpf_probe__flush_buffer(ebpf_probe)
 	}
 }

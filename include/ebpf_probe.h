@@ -14,7 +14,7 @@ struct ebpf_probe* ebpf_probe__init(
 void ebpf_probe__destroy(
 	struct ebpf_probe* ebpf_probe);
 
-void ebpf_probe__flush_packet_info_ring_buffer(
+void ebpf_probe__flush_buffer(
 	struct ebpf_probe* ebpf_probe);
 
 #endif
