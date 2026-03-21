@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.28.3)
 
 project(packet_counter)
 
-set(BPF_SOURCE ${CMAKE_SOURCE_DIR}/src/xdp_prog.bpf.c)
-set(BPF_OBJECT ${CMAKE_BINARY_DIR}/xdp_prog.bpf.o)
-set(BPF_SKELETON ${CMAKE_SOURCE_DIR}/include/xdp_prog.skel.h)
+set(BPF_SOURCE ${CMAKE_SOURCE_DIR}/src/probe.bpf.c)
+set(BPF_OBJECT ${CMAKE_BINARY_DIR}/probe.bpf.o)
+set(BPF_SKELETON ${CMAKE_SOURCE_DIR}/include/probe.skel.h)
 set(VMLINUX_HEADER ${CMAKE_SOURCE_DIR}/include/vmlinux.h)
 
 #==============================================================================
@@ -18,7 +18,7 @@ add_custom_command(
 )
 
 #==============================================================================
-# Generate object file from src/xdp_prog.bpf.c using clang compiler
+# Generate object file from src/probe.bpf.c using clang compiler
 #==============================================================================
 add_custom_command(
 	OUTPUT ${BPF_OBJECT}
@@ -34,7 +34,7 @@ add_custom_command(
 add_custom_target(bpf_object ALL DEPENDS ${VMLINUX_HEADER} ${BPF_OBJECT})
 
 #==============================================================================
-# Generate skeleton header file from xdp_prog.bpf.o using bpftool
+# Generate skeleton header file from probe.bpf.o using bpftool
 #==============================================================================
 add_custom_command(
 	OUTPUT ${BPF_SKELETON}
@@ -48,7 +48,7 @@ add_custom_target(bpf_skeleton ALL DEPENDS ${BPF_SKELETON})
 #==============================================================================
 # Compile userspace program
 #==============================================================================
-add_executable(packet_counter src/main.c src/ebpf_probe.c)
+add_executable(packet_counter src/main.c src/probe.c)
 target_include_directories(packet_counter PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(packet_counter PRIVATE bpf)
 target_compile_options(packet_counter PRIVATE -Wall -Werror -O3)
@@ -56,7 +56,7 @@ target_compile_options(packet_counter PRIVATE -Wall -Werror -O3)
 #==============================================================================
 # Compile ebpf_probe.c as library
 #==============================================================================
-add_library(ebpf_probe SHARED src/ebpf_probe.c)
+add_library(ebpf_probe SHARED src/probe.c)
 target_include_directories(ebpf_probe PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(ebpf_probe PRIVATE bpf)
 

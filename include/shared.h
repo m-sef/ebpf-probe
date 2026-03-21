@@ -7,7 +7,8 @@
 #include <linux/types.h>
 #endif
 
-typedef struct packet_info_t {
+typedef struct packet_info {
+	__u64 time;
 	__u64 size;
 	__u32 rx_queue_index;
 	__u32 source_ipv4_address;

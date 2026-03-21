@@ -1,38 +1,45 @@
 #include <unistd.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-#define REQUIRED_ARGS \
-	REQUIRED_STRING_ARG(interface_name, "interface", "Interface name")
-
-#include "easyargs.h"
-#include "ebpf_probe.h"
+#include "probe.h"
 
 static void ipv4_address_to_string(
-	char* buffer,
-	const size_t buffer_size,
-	const uint32_t ipv4_address)
+		char* buffer,
+		const size_t buffer_size,
+		const uint32_t ipv4_address,
+		const uint16_t port)
 {
-	snprintf(buffer, buffer_size, "%u.%u.%u.%u",
-		  (ipv4_address)       & 0xFF,
-		  (ipv4_address >> 8)  & 0xFF,
-		  (ipv4_address >> 16) & 0xFF,
-		  (ipv4_address >> 24) & 0xFF);
+	snprintf(buffer, buffer_size, "%u.%u.%u.%u:%u",
+		(ipv4_address)       & 0xFF,
+		(ipv4_address >> 8)  & 0xFF,
+		(ipv4_address >> 16) & 0xFF,
+		(ipv4_address >> 24) & 0xFF,
+		port);
 }
 
-static int handle_record(void* context, void* data, size_t size)
+static int handle_record(
+		void* context,
+		void* data,
+		size_t size)
 {
-	struct packet_info_t* info = data;
-	char source_ipv4_address_as_string[16];
-	char destination_ipv4_address_as_string[16];
-	ipv4_address_to_string(source_ipv4_address_as_string, 16, info->source_ipv4_address);
-	ipv4_address_to_string(destination_ipv4_address_as_string, 16, info->destination_ipv4_address);
+	packet_info_t* info = data;
 
-	printf("%15s:%-5u->%15s:%-5u rx_queue_index: %-9u protocol: %-3u size: %llu\n",
+	char source_ipv4_address_as_string[22];
+	ipv4_address_to_string(
+		source_ipv4_address_as_string, 22,
+		info->source_ipv4_address, info->source_port);
+
+	char destination_ipv4_address_as_string[22];
+	ipv4_address_to_string(
+		destination_ipv4_address_as_string, 22,
+		info->destination_ipv4_address, info->destination_port);
+
+	printf("%llu,%s,%s,%u,%u,%llu\n",
+		info->time,
 		source_ipv4_address_as_string,
-		info->source_port,
 		destination_ipv4_address_as_string,
-		info->destination_port,
 		info->rx_queue_index,
 		info->protocol,
 		info->size);
@@ -42,21 +49,35 @@ static int handle_record(void* context, void* data, size_t size)
 
 int main(int argc, char** argv)
 {
-	args_t args = make_default_args();
-	if (!parse_args(argc, argv, &args))
-	{
-		print_help(argv[0]);
-		return EXIT_FAILURE;
-	}
+	probe_t* probe = probe__init();
 
-	struct ebpf_probe* ebpf_probe = ebpf_probe__init(args.interface_name, handle_record, NULL);
-	if (!ebpf_probe)
-		return EXIT_FAILURE;
+	probe__attach_xdp(probe, "lo");
+	probe__attach_xdp(probe, "enp0s31f6");
+	probe__init_buffer(probe, handle_record, NULL);
+
+	puts("time,source_socket,destination_socket,rx_queue_index,protocol,size");
 
 	while (1)
-		ebpf_probe__flush_buffer(ebpf_probe);
+	{
+		size_t available_buffer_size = probe__available_buffer_size(probe);
 
-	ebpf_probe__destroy(ebpf_probe);
+		if (available_buffer_size >= (1 << 10))
+		{
+			/* printf("%lu available buffer size, flushing...\n",
+				available_buffer_size); */
+			probe__flush_buffer(probe);
+		}
+		else
+		{
+			/* printf("%lu available buffer size, will flush at %u\n",
+				available_buffer_size, (1 << 10)); */
+			// Sleep for 1 seconds
+			usleep(1000000);
+		}
+	}
+
+	probe__destroy_buffer(probe);
+	probe__destroy(probe);
 
 	return EXIT_SUCCESS;
 }

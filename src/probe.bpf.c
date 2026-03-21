@@ -26,7 +26,8 @@ int xdp_prog(struct xdp_md* context)
 	if ((void*)ipv4_header + sizeof(*ipv4_header) > data_end)
 		return XDP_PASS;
 
-	struct packet_info_t packet_info = {
+	struct packet_info packet_info = {
+		.time = bpf_ktime_get_ns(),
 		.size = data_end - data,
 		.rx_queue_index = context->rx_queue_index,
 		.source_ipv4_address = ipv4_header->saddr,
@@ -58,7 +59,7 @@ int xdp_prog(struct xdp_md* context)
 		packet_info.destination_port = bpf_ntohs(tcp_header->dest);
 	}
 
-	struct packet_info_t* record = bpf_ringbuf_reserve(&packet_info_ring_buffer, sizeof(*record), 0);
+	struct packet_info* record = bpf_ringbuf_reserve(&packet_info_ring_buffer, sizeof(*record), 0);
 	if (!record)
 		return XDP_PASS;
 
