@@ -13,7 +13,7 @@ def main() -> None:
     data_frame = data_frame.set_index('datetime')
 
     data_frame = data_frame[['size']].resample('1s').sum()
-    data_frame['size'] = data_frame['size'] / 1024
+    data_frame['size'] = data_frame['size'] / (1 << 10)
 
     plt.plot(
         data_frame.index,
