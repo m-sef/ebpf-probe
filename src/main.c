@@ -2,8 +2,16 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <signal.h>
 
 #include "probe.h"
+
+static volatile sig_atomic_t running = 1;
+
+static void handle_signal_interrupt(const int sig)
+{
+	running = 0;
+}
 
 static void ipv4_address_to_string(
 		char* buffer,
@@ -51,13 +59,15 @@ int main(int argc, char** argv)
 {
 	probe_t* probe = probe__init();
 
+	signal(SIGINT, handle_signal_interrupt);
+
 	probe__attach_xdp(probe, "lo");
 	probe__attach_xdp(probe, "enp0s31f6");
 	probe__init_buffer(probe, handle_record, NULL);
 
 	puts("time,source_socket,destination_socket,rx_queue_index,protocol,size");
 
-	while (1)
+	while (running)
 	{
 		size_t available_buffer_size = probe__available_buffer_size(probe);
 
@@ -75,6 +85,7 @@ int main(int argc, char** argv)
 			usleep(1000000);
 		}
 	}
+	probe__flush_buffer(probe);
 
 	probe__destroy_buffer(probe);
 	probe__destroy(probe);
