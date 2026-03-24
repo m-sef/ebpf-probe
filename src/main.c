@@ -67,6 +67,8 @@ int main(int argc, char** argv)
 
 	puts("time,source_socket,destination_socket,rx_queue_index,protocol,size");
 
+	probe__init_perf_event(probe);
+
 	while (running)
 	{
 		size_t available_buffer_size = probe__available_buffer_size(probe);
@@ -86,6 +88,8 @@ int main(int argc, char** argv)
 		}
 	}
 	probe__flush_buffer(probe);
+
+	printf("%ld instructions\n", probe__read_perf_event(probe));
 
 	probe__destroy_buffer(probe);
 	probe__destroy(probe);

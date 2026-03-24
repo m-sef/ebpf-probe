@@ -6,6 +6,7 @@
 #include "shared.h"
 
 typedef struct probe probe_t;
+typedef struct probe_config probe_config_t;
 typedef int (*buffer_callback_t)(void* context, void* data, size_t size);
 
 probe_t* probe__init();
@@ -32,6 +33,12 @@ size_t probe__available_buffer_size(
 		probe_t* probe);
 
 size_t probe__buffer_size(
+		probe_t* probe);
+
+void probe__init_perf_event(
+		probe_t* probe);
+
+uint64_t probe__read_perf_event(
 		probe_t* probe);
 
 #endif

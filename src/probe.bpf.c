@@ -9,7 +9,7 @@ struct {
 } packet_info_ring_buffer SEC(".maps");
 
 SEC("xdp")
-int xdp_prog(struct xdp_md* context)
+int xdp_probe(struct xdp_md* context)
 {
 	void* data     = (void*)(long)context->data;
 	void* data_end = (void*)(long)context->data_end;
