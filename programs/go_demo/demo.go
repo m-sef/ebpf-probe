@@ -1,9 +1,9 @@
 package main
 
 /*
-#cgo LDFLAGS: -L${SRCDIR}/../build -lebpf_probe -Wl,-rpath,${SRCDIR}/../build
-#cgo CFLAGS: -I${SRCDIR}/../include
-#include "../include/xdp_probe.h"
+#cgo LDFLAGS: -L${SRCDIR}/../../build -lebpf_probe -Wl,-rpath,${SRCDIR}/../../build
+#cgo CFLAGS: -I${SRCDIR}/../../include
+#include "../../include/xdp_probe.h"
 
 extern int handleRecord(void* context, void* data, size_t size);
 */
