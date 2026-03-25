@@ -3,7 +3,7 @@ package main
 /*
 #cgo LDFLAGS: -L${SRCDIR}/../build -lebpf_probe -Wl,-rpath,${SRCDIR}/../build
 #cgo CFLAGS: -I${SRCDIR}/../include
-#include "../include/probe.h"
+#include "../include/xdp_probe.h"
 
 extern int handleRecord(void* context, void* data, size_t size);
 */
@@ -34,17 +34,16 @@ func handleRecord(context unsafe.Pointer, data unsafe.Pointer, size C.size_t) C.
 }
 
 func main() {
-	probe := C.probe__init()
+	C.xdp_probe__init()
 
-	C.probe__attach_xdp(probe, C.CString("lo"))
-	C.probe__attach_xdp(probe, C.CString("enp0s31f6"))
+	C.xdp_probe__attach(C.CString("enp0s31f6"))
 
-	C.probe__init_buffer(probe, C.buffer_callback_t(C.handleRecord), nil)
+	C.xdp_probe__init_buffer(C.buffer_callback_t(C.handleRecord), nil)
 
 	for {
-		C.probe__flush_buffer(probe)
+		C.xdp_probe__flush_buffer()
 	}
 
-	C.probe__destroy_buffer(probe)
-	C.probe__destroy(probe)
+	C.xdp_probe__destroy_buffer()
+	C.xdp_probe__destroy()
 }
