@@ -1,3 +1,9 @@
+/**
+ * @file shared.h
+ * @author Seth Moore (slmoore@hamilton.edu)
+ * @brief 
+ * 
+ */
 #ifndef SHARED_H
 #define SHARED_H
 

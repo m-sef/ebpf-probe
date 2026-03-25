@@ -1,19 +1,23 @@
+/**
+ * @file main.c
+ * @author Seth Moore (slmoore@hamilton.edu)
+ * @brief 
+ * 
+ */
 #include <unistd.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-#include <errno.h>
-#include <err.h>
 
 #include "xdp_probe.h"
-#include "perf_event_handler.h"
 
-static volatile sig_atomic_t running = 1;
+static volatile sig_atomic_t running = true;
 
 static void handle_signal_interrupt(const int sig)
 {
-	running = 0;
+	running = false;
 }
 
 static void ipv4_address_to_string(
@@ -62,33 +66,10 @@ int main(int argc, char** argv)
 {
 	signal(SIGINT, handle_signal_interrupt);
 
-	uint64_t event = PERF_COUNT_HW_CACHE_MISSES;
-	size_t cpu_count = sysconf(_SC_NPROCESSORS_ONLN);
-
-	perf_event_handler__init();
-	perf_event_handler__open_hardware_event_across_all_cpus(event, -1);
-
-	while (running)
-	{
-		puts("");
-		for (size_t cpu = 0; cpu < cpu_count; cpu++)
-		{
-			printf("CPU %-2lu Cache misses: %lu\n", cpu, perf_event_handler__read_hardware_event(event, cpu));
-		}
-		printf(" Total cache misses: %lu\n", perf_event_handler__read_hardware_event_across_all_cpus(event));
-		perf_event_handler__reset_hardware_event_across_all_cpus(event);
-		usleep(1000000);
-	}
-
-	perf_event_handler__close_hardware_event_across_all_cpus(event);
-
-	running = 1;
-
 	xdp_probe__init();
 	xdp_probe__attach("enp0s31f6");
 	xdp_probe__init_buffer(handle_record, NULL);
 
-	puts("");
 	puts("time,source_socket,destination_socket,rx_queue_index,protocol,size");
 
 	while (running)

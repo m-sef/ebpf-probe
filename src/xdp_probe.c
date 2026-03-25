@@ -1,3 +1,9 @@
+/**
+ * @file xdp_probe.c
+ * @author Seth Moore (slmoore@hamilton.edu)
+ * @brief 
+ * 
+ */
 #include <linux/perf_event.h>
 #include <linux/hw_breakpoint.h>
 #include <sys/syscall.h>
@@ -42,7 +48,6 @@ void xdp_probe__init()
 		xdp_probe_bpf__destroy(skeleton);
 		err(EXIT_FAILURE, "Failed to open and/or load BPF object\n");
 	}
-
 
 	xdp_probe.skeleton = skeleton;
 	xdp_probe.buffer = NULL;

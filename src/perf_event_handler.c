@@ -53,8 +53,8 @@ void perf_event_handler__init()
 /**
  * @brief 
  * 
- * @param event 
- * @param pid 
+ * @param event
+ * @param pid
  * @param cpu 
  */
 void perf_event_handler__open_hardware_event(
