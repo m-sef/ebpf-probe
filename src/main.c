@@ -3,8 +3,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
+#include <errno.h>
+#include <err.h>
 
-#include "probe.h"
+#include "xdp_probe.h"
+#include "perf_event_handler.h"
 
 static volatile sig_atomic_t running = 1;
 
@@ -57,27 +60,46 @@ static int handle_record(
 
 int main(int argc, char** argv)
 {
-	probe_t* probe = probe__init();
-
 	signal(SIGINT, handle_signal_interrupt);
 
-	probe__attach_xdp(probe, "lo");
-	probe__attach_xdp(probe, "enp0s31f6");
-	probe__init_buffer(probe, handle_record, NULL);
+	uint64_t event = PERF_COUNT_HW_CACHE_MISSES;
+	size_t cpu_count = sysconf(_SC_NPROCESSORS_ONLN);
 
-	puts("time,source_socket,destination_socket,rx_queue_index,protocol,size");
-
-	probe__init_perf_event(probe);
+	perf_event_handler__init();
+	perf_event_handler__open_hardware_event_across_all_cpus(event, -1);
 
 	while (running)
 	{
-		size_t available_buffer_size = probe__available_buffer_size(probe);
+		puts("");
+		for (size_t cpu = 0; cpu < cpu_count; cpu++)
+		{
+			printf("CPU %-2lu Cache misses: %lu\n", cpu, perf_event_handler__read_hardware_event(event, cpu));
+		}
+		printf(" Total cache misses: %lu\n", perf_event_handler__read_hardware_event_across_all_cpus(event));
+		perf_event_handler__reset_hardware_event_across_all_cpus(event);
+		usleep(1000000);
+	}
+
+	perf_event_handler__close_hardware_event_across_all_cpus(event);
+
+	running = 1;
+
+	xdp_probe__init();
+	xdp_probe__attach("enp0s31f6");
+	xdp_probe__init_buffer(handle_record, NULL);
+
+	puts("");
+	puts("time,source_socket,destination_socket,rx_queue_index,protocol,size");
+
+	while (running)
+	{
+		size_t available_buffer_size = xdp_probe__available_buffer_size();
 
 		if (available_buffer_size >= (1 << 10))
 		{
 			/* printf("%lu available buffer size, flushing...\n",
 				available_buffer_size); */
-			probe__flush_buffer(probe);
+			xdp_probe__flush_buffer();
 		}
 		else
 		{
@@ -87,12 +109,11 @@ int main(int argc, char** argv)
 			usleep(1000000);
 		}
 	}
-	probe__flush_buffer(probe);
 
-	printf("%ld instructions\n", probe__read_perf_event(probe));
+	xdp_probe__flush_buffer();
 
-	probe__destroy_buffer(probe);
-	probe__destroy(probe);
+	xdp_probe__destroy_buffer();
+	xdp_probe__destroy();
 
 	return EXIT_SUCCESS;
 }

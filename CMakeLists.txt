@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.28.3)
 
 project(packet_counter)
 
-set(BPF_SOURCE ${CMAKE_SOURCE_DIR}/src/probe.bpf.c)
-set(BPF_OBJECT ${CMAKE_BINARY_DIR}/probe.bpf.o)
-set(BPF_SKELETON ${CMAKE_SOURCE_DIR}/include/probe.skel.h)
+set(BPF_SOURCE ${CMAKE_SOURCE_DIR}/src/xdp_probe.bpf.c)
+set(BPF_OBJECT ${CMAKE_BINARY_DIR}/xdp_probe.bpf.o)
+set(BPF_SKELETON ${CMAKE_SOURCE_DIR}/include/xdp_probe.skel.h)
 set(VMLINUX_HEADER ${CMAKE_SOURCE_DIR}/include/vmlinux.h)
 
 #==============================================================================
@@ -48,7 +48,10 @@ add_custom_target(bpf_skeleton ALL DEPENDS ${BPF_SKELETON})
 #==============================================================================
 # Compile userspace program
 #==============================================================================
-add_executable(packet_counter src/main.c src/probe.c)
+add_executable(packet_counter
+		src/main.c
+		src/xdp_probe.c
+		src/perf_event_handler.c)
 target_include_directories(packet_counter PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(packet_counter PRIVATE bpf)
 target_compile_options(packet_counter PRIVATE -Wall -Werror -O3)
@@ -56,7 +59,7 @@ target_compile_options(packet_counter PRIVATE -Wall -Werror -O3)
 #==============================================================================
 # Compile ebpf_probe.c as library
 #==============================================================================
-add_library(ebpf_probe SHARED src/probe.c)
+add_library(ebpf_probe SHARED src/xdp_probe.c)
 target_include_directories(ebpf_probe PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(ebpf_probe PRIVATE bpf)
 
