@@ -41,22 +41,11 @@ static void perf_event_set(
 	assert(ioctl(fd, request, 0) == 0);
 }
 
-/**
- * @brief 
- * 
- */
 void perf_event_handler__init()
 {
 	perf_event_handler.cpu_count = sysconf(_SC_NPROCESSORS_ONLN);
 }
 
-/**
- * @brief 
- * 
- * @param event
- * @param pid
- * @param cpu 
- */
 void perf_event_handler__open_hardware_event(
 		uint64_t event,
 		pid_t pid,
@@ -83,12 +72,6 @@ void perf_event_handler__open_hardware_event(
 	hmput(perf_event_handler.perf_event_map, event, events);
 }
 
-/**
- * @brief 
- * 
- * @param event 
- * @param pid 
- */
 void perf_event_handler__open_hardware_event_across_all_cpus(
 		uint64_t event,
 		pid_t pid)
@@ -116,12 +99,6 @@ void perf_event_handler__open_hardware_event_across_all_cpus(
 	hmput(perf_event_handler.perf_event_map, event, events);
 }
 
-/**
- * @brief 
- * 
- * @param event 
- * @param cpu 
- */
 void perf_event_handler__reset_hardware_event(
 		uint64_t event,
 		int cpu)
@@ -135,11 +112,6 @@ void perf_event_handler__reset_hardware_event(
 	perf_event_set(fd, PERF_EVENT_IOC_RESET);
 }
 
-/**
- * @brief 
- * 
- * @param event 
- */
 void perf_event_handler__reset_hardware_event_across_all_cpus(
 		uint64_t event)
 {
@@ -155,12 +127,6 @@ void perf_event_handler__reset_hardware_event_across_all_cpus(
 	}
 }
 
-/**
- * @brief 
- * 
- * @param event 
- * @param cpu 
- */
 void perf_event_handler__disable_hardware_event(
 		uint64_t event,
 		int cpu)
@@ -174,11 +140,6 @@ void perf_event_handler__disable_hardware_event(
 	perf_event_set(fd, PERF_EVENT_IOC_DISABLE);
 }
 
-/**
- * @brief 
- * 
- * @param event 
- */
 void perf_event_handler__disable_hardware_event_across_all_cpus(
 		uint64_t event)
 {
@@ -194,12 +155,6 @@ void perf_event_handler__disable_hardware_event_across_all_cpus(
 	}
 }
 
-/**
- * @brief 
- * 
- * @param event 
- * @param cpu 
- */
 void perf_event_handler__enable_hardware_event(
 		uint64_t event,
 		int cpu)
@@ -213,11 +168,6 @@ void perf_event_handler__enable_hardware_event(
 	perf_event_set(fd, PERF_EVENT_IOC_ENABLE);
 }
 
-/**
- * @brief 
- * 
- * @param event 
- */
 void perf_event_handler__enable_hardware_event_across_all_cpus(
 		uint64_t event)
 {
@@ -233,13 +183,6 @@ void perf_event_handler__enable_hardware_event_across_all_cpus(
 	}
 }
 
-/**
- * @brief 
- * @todo event is never removed from perf_event_handler.perf_event_map, potential memory leak
- * 
- * @param event 
- * @param cpu 
- */
 void perf_event_handler__close_hardware_event(
 		uint64_t event,
 		int cpu)
@@ -255,12 +198,6 @@ void perf_event_handler__close_hardware_event(
 	hmget(perf_event_handler.perf_event_map, event)[cpu] = UNUSED_FD;
 }
 
-/**
- * @brief 
- * @todo event is never removed from perf_event_handler.perf_event_map, potential memory leak
- * 
- * @param event 
- */
 void perf_event_handler__close_hardware_event_across_all_cpus(
 		uint64_t event)
 {
@@ -277,13 +214,6 @@ void perf_event_handler__close_hardware_event_across_all_cpus(
 	}
 }
 
-/**
- * @brief 
- * 
- * @param event 
- * @param cpu 
- * @return uint64_t 
- */
 uint64_t perf_event_handler__read_hardware_event(
 		uint64_t event,
 		int cpu)
@@ -303,12 +233,6 @@ uint64_t perf_event_handler__read_hardware_event(
 	return value;
 }
 
-/**
- * @brief 
- * 
- * @param event 
- * @return uint64_t 
- */
 uint64_t perf_event_handler__read_hardware_event_across_all_cpus(
 		uint64_t event)
 {
