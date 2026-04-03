@@ -32,4 +32,8 @@ size_t xdp_probe__available_buffer_size();
 
 size_t xdp_probe__buffer_size();
 
+size_t xdp_probe__get_total_packets_received();
+
+size_t xdp_probe__get_total_rx_bytes_received();
+
 #endif

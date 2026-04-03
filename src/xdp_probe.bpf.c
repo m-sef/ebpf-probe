@@ -8,6 +8,9 @@ struct {
     __uint(max_entries, 1 << 24);
 } packet_info_ring_buffer SEC(".maps");
 
+__u64 total_packets_received  = 0;
+__u64 total_rx_bytes_received = 0;
+
 SEC("xdp")
 int xdp_probe(struct xdp_md* context)
 {
@@ -36,6 +39,9 @@ int xdp_probe(struct xdp_md* context)
 		.destination_port = 0,
 		.protocol = ipv4_header->protocol
 	};
+
+	total_packets_received++;
+	total_rx_bytes_received += data_end - data;
 
 	/* Handle UDP packets */
 	if (ipv4_header->protocol == IPPROTO_UDP)

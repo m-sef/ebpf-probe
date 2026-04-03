@@ -99,3 +99,13 @@ size_t xdp_probe__available_buffer_size()
 {
 	return ring__avail_data_size(ring_buffer__ring(xdp_probe.buffer, 0));
 }
+
+size_t xdp_probe__get_total_packets_received()
+{
+	return xdp_probe.skeleton->bss->total_packets_received;
+}
+
+size_t xdp_probe__get_total_rx_bytes_received()
+{
+	return xdp_probe.skeleton->bss->total_rx_bytes_received;
+}
