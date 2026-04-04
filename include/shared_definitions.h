@@ -4,8 +4,8 @@
  * @brief 
  * 
  */
-#ifndef SHARED_H
-#define SHARED_H
+#ifndef SHARED_DEFINITIONS_H
+#define SHARED_DEFINITIONS_H
 
 #ifdef __BPF__
 #include "vmlinux.h"

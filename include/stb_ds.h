@@ -383,7 +383,6 @@ CREDITS
     Andreas Vennstrom
     Tobias Mansfield-Williams
 */
-
 #ifdef STBDS_UNIT_TESTS
 #define _CRT_SECURE_NO_WARNINGS
 #endif

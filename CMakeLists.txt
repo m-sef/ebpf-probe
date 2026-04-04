@@ -48,7 +48,7 @@ add_custom_target(bpf_skeleton ALL DEPENDS ${BPF_SKELETON})
 #==============================================================================
 # Compile as shared object
 #==============================================================================
-add_library(ebpf_probe SHARED src/xdp_probe.c src/perf_event_handler.c)
+add_library(ebpf_probe SHARED src/xdp_probe.c src/perf_event_handler.c src/rapl_handler.c)
 target_include_directories(ebpf_probe PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(ebpf_probe PRIVATE bpf)
 

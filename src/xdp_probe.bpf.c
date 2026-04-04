@@ -1,5 +1,5 @@
 #include "vmlinux.h"
-#include "shared.h"
+#include "shared_definitions.h"
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
 
