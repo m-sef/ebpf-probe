@@ -7,6 +7,14 @@
 #include "rapl_handler.h"
 #include "xdp_probe.h"
 
+#define REQUIRED_ARGS \
+	REQUIRED_STRING_ARG(interface, "interface", "Listen on this interface")
+
+#define BOOLEAN_ARGS \
+    BOOLEAN_ARG(help, "-h", "Show help")
+
+#include "easyargs.h"
+
 static volatile sig_atomic_t running = true;
 
 static void handle_signal_interrupt(const int sig)
@@ -16,17 +24,25 @@ static void handle_signal_interrupt(const int sig)
 
 int main(int argc, char** argv)
 {
-	signal(SIGINT, handle_signal_interrupt);
+	args_t args = make_default_args();
+
+	if (!parse_args(argc, argv, &args) || args.help)
+	{
+        print_help(argv[0]);
+        return EXIT_FAILURE;
+    }
 
 	perf_event_handler__init();
 	rapl_handler__init();
 	xdp_probe__init();
-	xdp_probe__attach("enp0s31f6");
+	xdp_probe__attach(args.interface);
 
 	perf_event_handler__open_hardware_event_across_all_cpus(PERF_COUNT_HW_INSTRUCTIONS, -1);
 	perf_event_handler__open_hardware_event_across_all_cpus(PERF_COUNT_HW_CPU_CYCLES, -1);
 	perf_event_handler__open_hardware_event_across_all_cpus(PERF_COUNT_HW_REF_CPU_CYCLES, -1);
 	perf_event_handler__open_hardware_event_across_all_cpus(PERF_COUNT_HW_CACHE_MISSES, -1);
+
+	signal(SIGINT, handle_signal_interrupt);
 	
 	while (running)
 	{
