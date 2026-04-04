@@ -24,6 +24,7 @@ static void handle_signal_interrupt(const int sig)
 
 int main(int argc, char** argv)
 {
+	struct timespec ts;
 	args_t args = make_default_args();
 
 	if (!parse_args(argc, argv, &args) || args.help)
