@@ -17,14 +17,6 @@ static const char* rapl_domain_names[] = {
 	[RAPL_PSYS]   = "psys",
 };
 
-static const char* rapl_domain_scale_file_paths[] = {
-	[RAPL_PKG]    = "/sys/bus/event_source/devices/power/events/energy-pkg.scale",
-	[RAPL_CORE]   = "/sys/bus/event_source/devices/power/events/energy-cores.scale",
-	[RAPL_UNCORE] = "/sys/bus/event_source/devices/power/events/energy-uncore.scale",
-	[RAPL_DRAM]   = "/sys/bus/event_source/devices/power/events/energy-ram.scale",
-	[RAPL_PSYS]   = "/sys/bus/event_source/devices/power/events/energy-psys.scale",
-};
-
 static double rapl_domain_scales[RAPL_MAX_DOMAINS];
 static fd_t rapl_file_descriptors[256][RAPL_MAX_DOMAINS];
 
