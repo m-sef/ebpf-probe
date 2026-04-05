@@ -38,7 +38,7 @@ def main() -> None:
 	data_frame['cpu_cycles']       .plot(ax=axes[0, 2], title="cpu_cycles")
 	data_frame['ref_cpu_cycles']   .plot(ax=axes[1, 0], title="ref_cpu_cycles")
 	data_frame['cache_misses']     .plot(ax=axes[1, 1], title="cache_misses")
-	data_frame['energy']           .plot(ax=axes[1, 2], title="energy")
+	data_frame['energy']           .plot(ax=axes[1, 2], title="energy", ylabel="Joules")
 
 	print(data_frame)
 
