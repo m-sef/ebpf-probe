@@ -17,8 +17,17 @@ static const char* rapl_domain_names[] = {
 	[RAPL_PSYS]   = "psys",
 };
 
+static const char* rapl_domain_scale_file_paths[] = {
+	[RAPL_PKG]    = "/sys/bus/event_source/devices/power/events/energy-pkg.scale",
+	[RAPL_CORE]   = "/sys/bus/event_source/devices/power/events/energy-cores.scale",
+	[RAPL_UNCORE] = "/sys/bus/event_source/devices/power/events/energy-uncore.scale",
+	[RAPL_DRAM]   = "/sys/bus/event_source/devices/power/events/energy-ram.scale",
+	[RAPL_PSYS]   = "/sys/bus/event_source/devices/power/events/energy-psys.scale",
+};
+
+static double rapl_domain_scales[RAPL_MAX_DOMAINS];
 static fd_t rapl_file_descriptors[256][RAPL_MAX_DOMAINS];
-static double rapl_scale = 0.0;
+
 static size_t cpu_count = 0;
 
 static fd_t perf_event_open(
@@ -63,8 +72,10 @@ static int read_rapl_config(const char* domain)
 		return -1;
 
 	// Parse "event=0xXX" format (hexadecimal)
-	if (fgets(buffer, sizeof(buffer), file)) {
-		if (sscanf(buffer, "event=%i", &config) != 1) {
+	if (fgets(buffer, sizeof(buffer), file))
+	{
+		if (sscanf(buffer, "event=%i", &config) != 1)
+		{
 			// Try parsing as hex if decimal fails
 			sscanf(buffer, "event=0x%x", &config);
 		}
@@ -74,17 +85,23 @@ static int read_rapl_config(const char* domain)
 	return config;
 }
 
-static void read_rapl_scale()
+static double read_rapl_scale(const char* domain)
 {
-    FILE* file = fopen("/sys/bus/event_source/devices/power/events/energy-pkg.scale", "r");
-    if (!file)
-	{
-        perror("No Scale?");
-		return;
-	}
+	char path[256];
+	FILE* file;
+	double scale;
+	char buffer[64];
 
-    fscanf(file, "%lf", &rapl_scale);
+    snprintf(path, sizeof(path), "/sys/bus/event_source/devices/power/events/energy-%s.scale", domain);
+	file = fopen(path, "r");
+    if (!file)
+		return 0.0;
+	
+	if (fgets(buffer, sizeof(buffer), file))
+		sscanf(buffer, "%le", &scale);
+
     fclose(file);
+	return scale;
 }
 
 void rapl_handler__init()
@@ -92,7 +109,10 @@ void rapl_handler__init()
 	cpu_count = sysconf(_SC_NPROCESSORS_ONLN);
 	int rapl_type = read_rapl_type();
 
-	read_rapl_scale();
+	for (size_t domain_idx = 0; domain_idx < RAPL_MAX_DOMAINS; domain_idx++)
+	{
+		rapl_domain_scales[domain_idx] = read_rapl_scale(rapl_domain_names[domain_idx]);
+	}
 
 	if (rapl_type < 0)
 		perror("RAPL not available");
@@ -153,7 +173,7 @@ double rapl_handler__read_energy_counter(int cpu, int domain)
 		return 0.0;
 	}
 	
-	return (double)energy * rapl_scale;
+	return (double)energy * rapl_domain_scales[domain];
 }
 
 double rapl_handler__read_energy_counter_across_all_cpus(int domain)

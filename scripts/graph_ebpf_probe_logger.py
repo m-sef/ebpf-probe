@@ -25,10 +25,11 @@ def main() -> None:
 
 	data_frame = pd.read_csv(file_path, comment='#', header=None, na_values='na')
 	data_frame.columns = ['rx_bytes_received', 'instructions', 'cpu_cycles', 'ref_cpu_cycles', 'cache_misses', 'energy']
+	data_frame['rx_bytes_received'] = data_frame['rx_bytes_received'] / (1 << 10)
 	data_frame = data_frame.diff()
 
 	figure, axes = plt.subplots(2, 3, figsize=(16, 8))
-	data_frame['rx_bytes_received'].plot(ax=axes[0, 0], title="rx_bytes_received")
+	data_frame['rx_bytes_received'].plot(ax=axes[0, 0], title="rx_bytes_received", ylabel="Throughput (KB/s)")
 	data_frame['instructions']     .plot(ax=axes[0, 1], title="instructions")
 	data_frame['cpu_cycles']       .plot(ax=axes[0, 2], title="cpu_cycles")
 	data_frame['ref_cpu_cycles']   .plot(ax=axes[1, 0], title="ref_cpu_cycles")
