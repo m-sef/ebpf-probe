@@ -6,7 +6,9 @@
 import sys
 from datetime import datetime
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import pandas as pd
+import numpy as np
 
 EXPECTED_ARGC = 2
 
@@ -21,34 +23,45 @@ def remove_outliers(dataframe : pd.DataFrame, factor : float = 1.5) -> pd.DataFr
 	return dataframe.mask((dataframe > upper_limit) | (dataframe < lower_limit))
 
 def main() -> None:
-	if len(sys.argv) != EXPECTED_ARGC:
+	if len(sys.argv) < EXPECTED_ARGC:
 		print("usage: graph_perf_logs <file_path>")
 		exit()
 	
-	file_path : str = sys.argv[1]
+	file_paths : list[str] = sys.argv[1:]
 
-	data_frame = pd.read_csv(file_path, comment='#', header=None, na_values='na')
-	data_frame.columns = ['timestamp', '2', 'value', '3', 'event', '5', '6', '7', '8']
-	data_frame = data_frame.pivot_table(index='timestamp', columns='event', values='value', aggfunc='first')
-	data_frame = remove_outliers(data_frame)
+	figure = plt.figure(figsize=(16, 8))
 
-	figure, axes = plt.subplots(2, 3, figsize=(16, 8))
-	data_frame['cache-misses']     .plot(ax=axes[0][0], title='cache-misses')
-	data_frame['instructions']     .plot(ax=axes[0][1], title='instructions')
-	data_frame['power/energy-pkg/'].plot(ax=axes[0][2], title='power/energy-pkg/')
-	data_frame['power/energy-ram/'].plot(ax=axes[1][0], title='power/energy-ram/')
-	data_frame['ref-cycles']       .plot(ax=axes[1][1], title='ref-cycles')
-	axes[1, 2].set_visible(False)
+	axis1 = plt.subplot2grid((2, 6), (0, 0), colspan=2)
+	axis2 = plt.subplot2grid((2, 6), (0, 2), colspan=2)
+	axis3 = plt.subplot2grid((2, 6), (0, 4), colspan=2)
 
-	print(data_frame)
+	axis4 = plt.subplot2grid((2, 6), (1, 0), colspan=3)
+	axis5 = plt.subplot2grid((2, 6), (1, 3), colspan=3)
 
-	for axis in axes.flat:
+	axes = [axis1, axis2, axis3, axis4, axis5]
+
+	for file_path in file_paths:
+		data_frame = pd.read_csv(file_path, comment='#', header=None, na_values='na')
+		data_frame.columns = ['timestamp', '2', 'value', '3', 'event', '5', '6', '7', '8']
+		data_frame['timestamp'] = pd.to_datetime(data_frame['timestamp'])
+		data_frame = data_frame.pivot_table(index='timestamp', columns='event', values='value', aggfunc='first')
+		data_frame = remove_outliers(data_frame)
+
+		data_frame['cache-misses']     .plot(ax=axis1, title='cache-misses')
+		data_frame['instructions']     .plot(ax=axis2, title='instructions')
+		data_frame['ref-cycles']       .plot(ax=axis3, title='ref-cycles')
+
+		data_frame['power/energy-pkg/'].plot(ax=axis4, title='power/energy-pkg/')
+		data_frame['power/energy-ram/'].plot(ax=axis5, title='power/energy-ram/')
+
+	for axis in axes:
+		axis.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
 		axis.ticklabel_format(useOffset=False, style='plain', axis='y')
+		axis.tick_params(axis='x', labelsize=8)
 		axis.grid(True, linestyle='--', alpha=0.5)
 
 	figure.suptitle(file_path)
 	figure.tight_layout(rect=[0, 0, 1, 0.96])
-	plt.subplots_adjust(hspace=0.35, wspace=0.3)
 	plt.show()
 
 if __name__ == '__main__':
