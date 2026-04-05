@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# Usage: graph_perf_logs <file_path>
+# Author: Seth Moore (slmoore@hamilton.edu)
+# Brief:
+#   Graph perf log files produced by power-consumption-logger
 import sys
 from datetime import datetime
 import matplotlib.pyplot as plt

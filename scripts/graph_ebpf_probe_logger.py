@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# Usage: graph_ebpf_probe_logger <file_path>
+# Author: Seth Moore (slmoore@hamilton.edu)
+# Brief:
+#   Graph output of programs/logger
 import sys
 from datetime import datetime
 import matplotlib.pyplot as plt
