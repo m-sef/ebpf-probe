@@ -15,8 +15,8 @@ def remove_outliers(dataframe : pd.DataFrame, factor : float = 1.5) -> pd.DataFr
 	Q3 = dataframe.quantile(0.75)
 	IQR = Q3 - Q1
 
-	upper_limit : float = Q3 + factor * IQR
-	lower_limit : float = Q1 - factor * IQR
+	upper_limit : float = Q3 + (factor * IQR)
+	lower_limit : float = Q1 - (factor * IQR)
 	
 	return dataframe.mask((dataframe > upper_limit) | (dataframe < lower_limit))
 
