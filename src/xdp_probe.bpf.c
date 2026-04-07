@@ -21,7 +21,6 @@ int xdp_probe(struct xdp_md* context)
 	if ((void*)ethernet_header + sizeof(*ethernet_header) > data_end)
 		return XDP_PASS;
 
-	/* Only handling IPv4 packets */
 	if (ethernet_header->h_proto != bpf_ntohs(0x0800))
 		return XDP_PASS;
 
@@ -29,47 +28,41 @@ int xdp_probe(struct xdp_md* context)
 	if ((void*)ipv4_header + sizeof(*ipv4_header) > data_end)
 		return XDP_PASS;
 
-	struct packet_info packet_info = {
-		.time = bpf_ktime_get_ns(),
-		.size = data_end - data,
-		.rx_queue_index = context->rx_queue_index,
-		.source_ipv4_address = ipv4_header->saddr,
-		.destination_ipv4_address = ipv4_header->daddr,
-		.source_port = 0,
-		.destination_port = 0,
-		.protocol = ipv4_header->protocol
-	};
-
 	total_packets_received++;
 	total_rx_bytes_received += data_end - data;
 
-	/* Handle UDP packets */
+	struct packet_info* record = bpf_ringbuf_reserve(&packet_info_ring_buffer, sizeof(*record), 0);
+	if (!record)
+		return XDP_PASS;
+
+	record->time = bpf_ktime_get_ns();
+	record->size = data_end - data;
+	record->rx_queue_index = context->rx_queue_index;
+	record->source_ipv4_address = ipv4_header->saddr;
+	record->destination_ipv4_address = ipv4_header->daddr;
+	record->source_port = 0;
+	record->destination_port = 0;
+	record->protocol = ipv4_header->protocol;
+
 	if (ipv4_header->protocol == IPPROTO_UDP)
 	{
 		struct udphdr* udp_header = (void*)ipv4_header + sizeof(*ipv4_header);
 		if ((void*)udp_header + sizeof(*udp_header) > data_end)
 			return XDP_PASS;
 		
-		packet_info.source_port = bpf_ntohs(udp_header->source);
-		packet_info.destination_port = bpf_ntohs(udp_header->dest);
+		record->source_port = bpf_ntohs(udp_header->source);
+		record->destination_port = bpf_ntohs(udp_header->dest);
 	}
-
-	/* Handle TCP packets */
-	if (ipv4_header->protocol == IPPROTO_TCP)
+	else if (ipv4_header->protocol == IPPROTO_TCP)
 	{
 		struct tcphdr* tcp_header = (void*)ipv4_header + sizeof(*ipv4_header);
 		if ((void*)tcp_header + sizeof(*tcp_header) > data_end)
 			return XDP_PASS;
 
-		packet_info.source_port = bpf_ntohs(tcp_header->source);
-		packet_info.destination_port = bpf_ntohs(tcp_header->dest);
+		record->source_port = bpf_ntohs(tcp_header->source);
+		record->destination_port = bpf_ntohs(tcp_header->dest);
 	}
-
-	struct packet_info* record = bpf_ringbuf_reserve(&packet_info_ring_buffer, sizeof(*record), 0);
-	if (!record)
-		return XDP_PASS;
-
-	*record = packet_info;
+	
 	bpf_ringbuf_submit(record, 0);
 
 	return XDP_PASS;
