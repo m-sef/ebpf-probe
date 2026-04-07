@@ -13,6 +13,16 @@ import numpy as np
 
 EXPECTED_ARGC = 2
 
+def get_interquartile_range(dataframe : pd.DataFrame, factor : float = 1.5) -> tuple[float, float]:
+	Q1 = dataframe.quantile(0.25)
+	Q3 = dataframe.quantile(0.75)
+	IQR = Q3 - Q1
+
+	upper_limit : float = Q3 + (factor * IQR)
+	lower_limit : float = Q1 - (factor * IQR)
+
+	return lower_limit, upper_limit
+
 def remove_outliers(dataframe : pd.DataFrame, factor : float = 1.5) -> pd.DataFrame:
 	Q1 = dataframe.quantile(0.25)
 	Q3 = dataframe.quantile(0.75)
@@ -29,11 +39,11 @@ def main() -> None:
 	#	exit()
 	
 	file_paths  : list[str]   = [
-		"logs/2026-04-05_16:31:09/node0-perf-2026-04-05_20-31-10.log",
-		"logs/2026-04-05_16:18:26/node0-perf-2026-04-05_20-18-27.log",
-		"logs/2026-04-07_11:12:30/node0-perf-2026-04-07_15-12-32.log",
+		"logs/no-ebpf-logs/node0-perf-2026-04-05_20-31-10.log",
+		"logs/unmodified-ebpf-logs/node0-perf-2026-04-05_20-18-27.log",
+		"logs/modified-ebpf-1-logs/node0-perf-2026-04-07_15-12-32.log",
 	]
-	log_names   : list[str]   = ['Without ebpf-probe', 'With ebpf-probe', 'Modifed ebpf-probe']
+	log_names   : list[str]   = ['Without ebpf-probe', 'Original ebpf-probe', 'Modifed ebpf-probe']
 	line_styles : list[str]   = ['solid', 'solid', 'solid']
 	line_widths : list[float] = [0.2, 0.3, 0.4]
 
@@ -55,7 +65,7 @@ def main() -> None:
 		data_frame = data_frame.pivot_table(index='timestamp', columns='event', values='value', aggfunc='first')
 
 		# Remove outliers by using Inter-Quartile Range (IQR)
-		data_frame = remove_outliers(data_frame, 5.0)
+		#data_frame = remove_outliers(data_frame, 5.0)
 
 		# Resample
 		data_frame = data_frame.resample('10s').mean()
@@ -73,14 +83,17 @@ def main() -> None:
 		axis1_median = data_frame['cache-misses'].median()
 		axis1.axhline(y=axis1_median, color=color, linewidth=1.2, linestyle='dashed', label="Median")
 		axis1.text(x=axis1.get_xlim()[0], y=axis1_median, s=f'median', color=color, va='bottom', ha='left', fontsize=7)
+		#axis1.set_ylim(get_interquartile_range(data_frame['cache-misses']))
 
 		axis2_median = data_frame['instructions'].median()
 		axis2.axhline(y=axis2_median, color=color, linewidth=1.2, linestyle='dashed', label="Median")
 		axis2.text(x=axis2.get_xlim()[0], y=axis2_median, s=f'median', color=color, va='bottom', ha='left', fontsize=7)
+		#axis2.set_ylim(get_interquartile_range(data_frame['instructions']))
 
 		axis3_median = data_frame['ref-cycles'].median()
 		axis3.axhline(y=axis3_median, color=color, linewidth=1.2, linestyle='dashed', label="Median")
 		axis3.text(x=axis3.get_xlim()[0], y=axis3_median, s=f'median', color=color, va='bottom', ha='left', fontsize=7)
+		#axis3.set_ylim(get_interquartile_range(data_frame['ref-cycles']))
 
 		data_frame['power/energy-pkg/'].plot(ax=axis4, title='power/energy-pkg/', linewidth=line_width, linestyle=line_style)
 		data_frame['power/energy-ram/'].plot(ax=axis5, title='power/energy-ram/', linewidth=line_width, linestyle=line_style)
@@ -92,9 +105,9 @@ def main() -> None:
 
 		#axis.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
 	
-	#axis1.set_ylim(bottom=1_000_000)
-	#axis2.set_ylim(bottom=12_100_000_000, top=12_300_000_000)
-	#axis3.set_ylim(bottom=16_000_000_000, top=18_000_000_000)
+	axis1.set_ylim(bottom=1_000_000)
+	axis2.set_ylim(bottom=12_100_000_000, top=12_300_000_000)
+	axis3.set_ylim(bottom=16_000_000_000, top=18_000_000_000)
 
 	axis1.yaxis.set_major_formatter(tkr.StrMethodFormatter('{x:,.0f}'))
 	axis2.yaxis.set_major_formatter(tkr.StrMethodFormatter('{x:,.0f}'))

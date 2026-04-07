@@ -13,7 +13,12 @@
 #include <linux/types.h>
 #endif
 
-typedef struct packet_info {
+struct counters {
+	__u64 total_packets_received;
+	__u64 total_rx_bytes_received;
+};
+
+struct packet_information {
 	__u64 time;
 	__u64 size;
 	__u32 rx_queue_index;
@@ -22,6 +27,6 @@ typedef struct packet_info {
 	__u16 source_port;
 	__u16 destination_port;
 	__u8 protocol;
-} packet_info_t;
+};
 
 #endif

@@ -6,6 +6,7 @@
  */
 #include <linux/perf_event.h>
 #include <linux/hw_breakpoint.h>
+#include <linux/types.h>
 #include <sys/syscall.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -27,15 +28,6 @@ static struct {
 	struct xdp_probe_bpf* skeleton;
 	struct ring_buffer* buffer;
 } xdp_probe;
-
-typedef struct probe_config {
-	struct { uint32_t key; void* value; }* rx_queue_whitelist;
-	struct { uint32_t key; void* value; }* source_ipv4_address_whitelist;
-	struct { uint16_t key; void* value; }* source_port_whitelist;
-	struct { uint32_t key; void* value; }* destination_ipv4_address_whitelist;
-	struct { uint16_t key; void* value; }* destination_port_whitelist;
-	struct { uint8_t  key; void* value; }* protocol_whitelist;
-} probe_config_t;
 
 void xdp_probe__init()
 {
@@ -70,42 +62,42 @@ void xdp_probe__attach(
 		err(EXIT_FAILURE, "Failed to attach XDP program\n");
 }
 
-void xdp_probe__init_buffer(
-		buffer_callback_t callback,
-		void* context)
-{
-	struct ring_buffer* buffer = ring_buffer__new(
-		bpf_map__fd(xdp_probe.skeleton->maps.packet_info_ring_buffer),
-		callback, context, NULL);
-	
-	xdp_probe.buffer = buffer;
-}
-
-void xdp_probe__flush_buffer()
-{
-	size_t entries_consumed = ring_buffer__consume(xdp_probe.buffer);
-
-	// Sleep for 1ms if no data was consumed, so to not max out CPU usage
-	if (entries_consumed == 0)
-		usleep(1000);
-}
-
-void xdp_probe__destroy_buffer()
-{
-	ring_buffer__free(xdp_probe.buffer);
-}
-
-size_t xdp_probe__available_buffer_size()
-{
-	return ring__avail_data_size(ring_buffer__ring(xdp_probe.buffer, 0));
-}
-
 size_t xdp_probe__get_total_packets_received()
 {
-	return xdp_probe.skeleton->bss->total_packets_received;
+	size_t cpu_count = libbpf_num_possible_cpus();
+	__u32 key = 0;
+	__u64 sum = 0;
+	struct counters counters[cpu_count];
+	int ret;
+	int fd = bpf_map__fd(xdp_probe.skeleton->maps.counters_map);
+
+	ret = bpf_map_lookup_elem(fd, &key, &counters);
+	assert(ret >= 0);
+
+	for (size_t cpu_idx = 0; cpu_idx < cpu_count; cpu_idx++)
+	{
+		sum += counters[cpu_idx].total_packets_received;
+	}
+
+	return sum;
 }
 
 size_t xdp_probe__get_total_rx_bytes_received()
 {
-	return xdp_probe.skeleton->bss->total_rx_bytes_received;
+	size_t cpu_count = libbpf_num_possible_cpus();
+	__u32 key = 0;
+	__u64 sum = 0;
+	struct counters counters[cpu_count];
+	int ret;
+	int fd = bpf_map__fd(xdp_probe.skeleton->maps.counters_map);
+
+	ret = bpf_map_lookup_elem(fd, &key, &counters);
+	assert(ret >= 0);
+
+	for (size_t cpu_idx = 0; cpu_idx < cpu_count; cpu_idx++)
+	{
+		sum += counters[cpu_idx].total_rx_bytes_received;
+	}
+
+	return sum;
 }
