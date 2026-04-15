@@ -39,15 +39,14 @@ def main() -> None:
 	#	exit()
 	
 	file_paths  : list[str]   = [
-		"logs/no-ebpf-logs/node0-perf-2026-04-05_20-31-10.log",
-		"logs/unmodified-ebpf-logs/node0-perf-2026-04-05_20-18-27.log",
-		"logs/modified-ebpf-1-logs/node0-perf-2026-04-07_15-12-32.log",
+		"logs/without-ebpf-probe/node0-perf-2026-04-08_22-57-01.log",
+		"logs/with-ebpf-probe/node0-perf-2026-04-08_22-53-26.log",
 	]
-	log_names   : list[str]   = ['Without ebpf-probe', 'Original ebpf-probe', 'Modifed ebpf-probe']
-	line_styles : list[str]   = ['solid', 'solid', 'solid']
-	line_widths : list[float] = [0.2, 0.3, 0.4]
+	log_names   : list[str]   = ['Without ebpf-probe', 'With ebpf-probe']
+	line_styles : list[str]   = ['solid', 'solid']
+	line_widths : list[float] = [1.0, 1.0]
 
-	figure = plt.figure(figsize=(32, 16))
+	figure = plt.figure(figsize=(20, 12))
 
 	axis1 = plt.subplot2grid((2, 6), (0, 0), colspan=2)
 	axis2 = plt.subplot2grid((2, 6), (0, 2), colspan=2)
@@ -68,10 +67,14 @@ def main() -> None:
 		#data_frame = remove_outliers(data_frame, 5.0)
 
 		# Resample
-		data_frame = data_frame.resample('10s').mean()
+		#data_frame = data_frame.resample('10s').mean()
 
 		# Normalize timestamps
-		data_frame.index = data_frame.index - data_frame.index.min()
+		data_frame.index = (data_frame.index - data_frame.index.min()).total_seconds()
+		
+		data_frame['cache-misses'] = data_frame['cache-misses'] / 100_000
+		data_frame['instructions'] = data_frame['instructions'] / 1_000_000
+		data_frame['ref-cycles']   = data_frame['ref-cycles']   / 1_000_000
 
 		# Plot
 		data_frame['cache-misses']     .plot(ax=axis1, title='cache-misses', linewidth=line_width, linestyle=line_style)
@@ -81,18 +84,24 @@ def main() -> None:
 		color = axis1.get_lines()[-1].get_color()
 
 		axis1_median = data_frame['cache-misses'].median()
-		axis1.axhline(y=axis1_median, color=color, linewidth=1.2, linestyle='dashed', label="Median")
-		axis1.text(x=axis1.get_xlim()[0], y=axis1_median, s=f'median', color=color, va='bottom', ha='left', fontsize=7)
+		#axis1.axhline(y=axis1_median, color=color, linewidth=1.2, linestyle='dashed', label="Median")
+		#axis1.text(x=axis1.get_xlim()[0], y=axis1_median, s=f'median', color=color, va='bottom', ha='left', fontsize=7)
+		axis1.set_xlabel("Time (s)")
+		axis1.set_ylabel("cache-misses (x100,000)")
 		#axis1.set_ylim(get_interquartile_range(data_frame['cache-misses']))
 
 		axis2_median = data_frame['instructions'].median()
 		axis2.axhline(y=axis2_median, color=color, linewidth=1.2, linestyle='dashed', label="Median")
 		axis2.text(x=axis2.get_xlim()[0], y=axis2_median, s=f'median', color=color, va='bottom', ha='left', fontsize=7)
+		axis2.set_xlabel("Time (s)")
+		axis2.set_ylabel("instructions (x1,000,000)")
 		#axis2.set_ylim(get_interquartile_range(data_frame['instructions']))
 
 		axis3_median = data_frame['ref-cycles'].median()
 		axis3.axhline(y=axis3_median, color=color, linewidth=1.2, linestyle='dashed', label="Median")
 		axis3.text(x=axis3.get_xlim()[0], y=axis3_median, s=f'median', color=color, va='bottom', ha='left', fontsize=7)
+		axis3.set_xlabel("Time (s)")
+		axis3.set_ylabel("ref-cycles (x1,000,000)")
 		#axis3.set_ylim(get_interquartile_range(data_frame['ref-cycles']))
 
 		data_frame['power/energy-pkg/'].plot(ax=axis4, title='power/energy-pkg/', linewidth=line_width, linestyle=line_style)
@@ -105,20 +114,25 @@ def main() -> None:
 
 		#axis.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
 	
-	axis1.set_ylim(bottom=1_000_000)
-	axis2.set_ylim(bottom=12_100_000_000, top=12_300_000_000)
-	axis3.set_ylim(bottom=16_000_000_000, top=18_000_000_000)
+	#axis1.set_ylim(bottom=1_000_000)
+	#axis2.set_ylim(bottom=12_100_000_000, top=12_300_000_000)
+	#axis3.set_ylim(bottom=16_000_000_000, top=18_000_000_000)
 
 	axis1.yaxis.set_major_formatter(tkr.StrMethodFormatter('{x:,.0f}'))
 	axis2.yaxis.set_major_formatter(tkr.StrMethodFormatter('{x:,.0f}'))
 	axis3.yaxis.set_major_formatter(tkr.StrMethodFormatter('{x:,.0f}'))
 
-	axis4.set_ylim(bottom=50.0)
-	axis5.set_ylim(bottom=7.0)
+	axis4.set_ylim(bottom=0.0)
+	axis5.set_ylim(bottom=0.0)
+	
+	axis4.set_xlabel("Time (s)")
+	axis4.set_ylabel("Joules")
+	axis5.set_xlabel("Time (s)")
+	axis5.set_ylabel("Joules")
 
-	figure.suptitle(" V.S. ".join(log_names))
-	figure.tight_layout()
-	#plt.subplots_adjust(hspace=0.15, wspace=0.30)
+	#figure.suptitle(" V.S. ".join(log_names))
+	#figure.tight_layout()
+	plt.subplots_adjust(hspace=0.30, wspace=0.50)
 	plt.legend(log_names, loc="lower right")
 	#plt.savefig("plot.pdf")
 	plt.show()
