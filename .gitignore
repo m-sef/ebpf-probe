@@ -2,7 +2,7 @@
 *.log
 /build
 /include/vmlinux.h
-/include/xdp_probe.skel.h
+/include/*.skel.h
 /logs/*
 !/logs/.gitkeep
 CLAUDE.md

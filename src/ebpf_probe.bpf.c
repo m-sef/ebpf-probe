@@ -1,5 +1,5 @@
 /**
- * @file xdp_probe.bpf.c
+ * @file ebpf_probe.bpf.c
  * @author Seth Moore (slmoore@hamilton.edu)
  * @brief eBPF program which uses the XDP hook to gather basic information about received packets
  * 
