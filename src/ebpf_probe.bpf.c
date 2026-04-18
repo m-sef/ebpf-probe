@@ -8,23 +8,10 @@
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
 
-struct counters {
-    __u64 total_packets_received;
-    __u64 total_rx_bytes_received;
-};
-
-struct packet_information {
-    __u64 time; /* Time, in nanoseconds, when the packet was received */
-    __u64 size; /* The size of the entire packet, in bytes, including all headers */
-    __u32 rx_queue_index; /* The index of the NIC queue where the packet was received*/
-    __u32 source_address;
-    __u32 destination_address;
-    __u16 source_port;
-    __u16 destination_port;
-    __u8 protocol;
-};
+#include <kernel_definitions.h>
 
 volatile bool record_individual_packet_information; /* Write packet information of received packets to packet_information_buffer */
+volatile size_t num_cpus;
 
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
@@ -32,6 +19,13 @@ struct {
     __type(key, __u32);
     __type(value, struct counters);
 } counters_map SEC(".maps");
+
+struct {
+    __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
+    __uint(max_entries, 10);
+    __type(key, __u32);
+    __type(value, fd_t);
+} perf_event_map SEC(".maps");
 
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
@@ -59,6 +53,15 @@ increment_global_counters(
         ptr->total_packets_received  += packets;
         ptr->total_rx_bytes_received += rx_bytes;
     }
+}
+
+static inline void
+reset_global_counters()
+{
+    __u32 key = 0;
+    struct counters* ptr = bpf_map_lookup_elem(&counters_map, &key);
+    if (ptr)
+        __builtin_memset(ptr, 0, sizeof(*ptr));
 }
 
 SEC("xdp")
@@ -125,12 +128,33 @@ int xdp_probe(struct xdp_md* context)
     return XDP_PASS;
 }
 
-SEC("perf_event")
-int perf_event_handler(struct bpf_perf_event_data *ctx)
+static inline __u64 
+read_perf_event_counter(
+        size_t perf_event_type,
+        size_t cpu_idx)
 {
-    return 0;
+    __u32 key = cpu_idx * NUM_EVENT_TYPES + perf_event_type;
+    struct bpf_perf_event_value value = {};
+
+    if (bpf_perf_event_read_value(&perf_event_map, key, &value, sizeof(value)) < 0)
+        return 0;
+
+    return value.counter;
 }
 
+SEC("perf_event")
+/**
+ * @brief Attached to Software CPU Clock perf event, triggers every 1Hz
+ * 
+ */
+int perf_event_handler(struct bpf_perf_event_data* ctx)
+{
+    __u32 cpu_idx = bpf_get_smp_processor_id();
 
+    bpf_printk("[%d] Total Instructions: %ld\n", 
+        cpu_idx, read_perf_event_counter(INSTRUCTIONS, cpu_idx));
+
+    return 0;
+}
 
 char LICENSE[] SEC("license") = "GPL";

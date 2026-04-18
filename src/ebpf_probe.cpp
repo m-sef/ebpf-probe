@@ -21,16 +21,91 @@
 
 #include "ebpf_probe.skel.h"
 #include "ebpf_probe.hpp"
+#include "definitions.hpp"
 #include "kernel_definitions.h"
 
 #define ROOT_PRIVILEGES 0
 
 static struct ebpf_probe_bpf* bpf;
+static size_t num_cpus = 0;
+
+static struct perf_event_attr perf_events[] = {
+    [INSTRUCTIONS]   = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_INSTRUCTIONS},
+    [CPU_CYCLES]     = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CPU_CYCLES},
+    [REF_CPU_CYCLES] = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_REF_CPU_CYCLES},
+};
+
+static inline error_t
+init_perf_event_handler()
+{
+    assert(bpf != nullptr);
+    assert(num_cpus != 0);
+
+    /* Attaches the Software CPU Clock perf event to the bpf program 'perf_event_handler' */
+    for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
+    {
+        struct perf_event_attr timer = {};
+        timer.type        = PERF_TYPE_SOFTWARE;
+        timer.config      = PERF_COUNT_SW_CPU_CLOCK;
+        timer.sample_freq = 1;
+        timer.freq        = 1;
+        
+        fd_t timer_fd = syscall(SYS_perf_event_open, &timer, -1, cpu_idx, -1, 0);
+        if (timer_fd < 0)
+        {
+            perror("");
+            return EXIT_FAILURE;
+        }
+        
+        struct bpf_link* link = bpf_program__attach_perf_event(
+            bpf->progs.perf_event_handler, timer_fd);
+        if (!link)
+        {
+            perror("Failed to attach BPF program to perf hook");
+            return EXIT_FAILURE;
+        }
+    }
+
+    return EXIT_SUCCESS;
+}
+
+static inline error_t
+init_perf_event_map()
+{
+    assert(bpf != nullptr);
+    assert(num_cpus != 0);
+
+    fd_t perf_event_map_fd = bpf_map__fd(bpf->maps.perf_event_map);
+
+    /* Add the file descriptors for each perf_event to the BPF program's perf_event_map */
+    for (size_t perf_event_idx = 0; perf_event_idx < NUM_EVENT_TYPES; perf_event_idx++)
+    {
+        for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
+        {
+
+            fd_t perf_event_fd = syscall(
+                SYS_perf_event_open, &perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
+            if (perf_event_fd < 0)
+            {
+                perror("");
+                return EXIT_FAILURE;
+            }
+            
+            __u32 key = cpu_idx * NUM_EVENT_TYPES + perf_event_idx;
+            bpf_map_update_elem(perf_event_map_fd, &key, &perf_event_fd, BPF_ANY);
+        }
+    }
+
+    return EXIT_SUCCESS;
+}
 
 error_t
 ebpf_probe::init()
 {
     assert(bpf == nullptr);
+    error_t err;
+
+    num_cpus = libbpf_num_possible_cpus();
 
     if (getuid() != ROOT_PRIVILEGES)
     {
@@ -38,13 +113,28 @@ ebpf_probe::init()
         return EXIT_FAILURE;
     }
 
-    bpf = ebpf_probe_bpf::open_and_load();
-
+    bpf = ebpf_probe_bpf::open();
     if (bpf == nullptr)
     {
-        fprintf(stderr, "Failed to open and load BPF object\n");
+        fprintf(stderr, "Failed to open BPF object\n");
         return EXIT_FAILURE;
     }
+
+    bpf_map__set_max_entries(bpf->maps.perf_event_map, num_cpus * NUM_EVENT_TYPES);
+
+    if (ebpf_probe_bpf::load(bpf) != 0)
+    {
+        fprintf(stderr, "Failed to load BPF object\n");
+        return EXIT_FAILURE;
+    }
+
+    err = init_perf_event_handler();
+    if (err != EXIT_SUCCESS)
+        return err;
+    
+    err = init_perf_event_map();
+    if (err != EXIT_SUCCESS)
+        return err;
 
     return EXIT_SUCCESS;
 }
