@@ -1,5 +1,5 @@
 /**
- * @file shared.h
+ * @file kernel_definitions.h
  * @author Seth Moore (slmoore@hamilton.edu)
  * @brief 
  * 

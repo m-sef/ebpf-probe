@@ -1,5 +1,5 @@
 /**
- * @file ebpf_probe.h
+ * @file ebpf_probe.hpp
  * @author Seth Moore (slmoore@hamilton.edu)
  * @brief 
  * 
@@ -19,7 +19,6 @@ namespace ebpf_probe
     error_t destroy();
 
     error_t attach_xdp(const std::string& interface_name);
-    error_t attach_perf(int perf_event);
 
     size_t get_total_packets_received();
     size_t get_total_rx_bytes_received();
