@@ -107,13 +107,15 @@ int main(int argc, char** argv)
 
     while (running)
     {
+        double rapl_energy = rapl_handler__read_energy_counter_across_all_cpus(RAPL_PKG);
+
         printf("%ld,%ld,%ld,%ld,%ld,%f\n",
             ebpf_probe::get_total_rx_bytes_received(),
             perf_event_handler__read_hardware_event_across_all_cpus(PERF_COUNT_HW_INSTRUCTIONS),
             perf_event_handler__read_hardware_event_across_all_cpus(PERF_COUNT_HW_CPU_CYCLES),
             perf_event_handler__read_hardware_event_across_all_cpus(PERF_COUNT_HW_REF_CPU_CYCLES),
             perf_event_handler__read_hardware_event_across_all_cpus(PERF_COUNT_HW_CACHE_MISSES),
-            rapl_handler__read_energy_counter_across_all());
+            rapl_energy);
         
         sleep(1);
     }
