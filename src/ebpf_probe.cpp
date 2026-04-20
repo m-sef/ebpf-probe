@@ -40,6 +40,17 @@ static struct perf_event_attr perf_events[] = {
     [REF_CPU_CYCLES]      = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_REF_CPU_CYCLES},
 };
 
+static const char* perf_event_names[] = {
+    [CPU_CYCLES]          = "cpu-cycles",
+    [INSTRUCTIONS]        = "instructions",
+    [CACHE_REFERENCES]    = "cache-references",
+    [CACHE_MISSES]        = "cache-misses",
+    [BRANCH_INSTRUCTIONS] = "branch-instructions",
+    [BRANCH_MISSES]       = "branch-misses",
+    [BUS_CYCLES]          = "bus-cycles",
+    [REF_CPU_CYCLES]      = "ref-cycles",
+};
+
 static inline error_t
 init_perf_event_handler()
 {
@@ -92,7 +103,9 @@ init_perf_event_map()
                 SYS_perf_event_open, &perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
             if (perf_event_fd < 0)
             {
-                perror("Failed to get file descriptor for PERF_EVENT");
+                fprintf(stderr, "Failed to get file descriptor for perf event '%s'\n", 
+                    perf_event_names[perf_event_idx]);
+                perror("");
                 return EXIT_FAILURE;
             }
             
