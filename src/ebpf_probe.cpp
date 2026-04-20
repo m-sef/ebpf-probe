@@ -30,9 +30,14 @@ static struct ebpf_probe_bpf* bpf;
 static size_t num_cpus = 0;
 
 static struct perf_event_attr perf_events[] = {
-    [INSTRUCTIONS]   = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_INSTRUCTIONS},
-    [CPU_CYCLES]     = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CPU_CYCLES},
-    [REF_CPU_CYCLES] = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_REF_CPU_CYCLES},
+    [CPU_CYCLES]          = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CPU_CYCLES},
+    [INSTRUCTIONS]        = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_INSTRUCTIONS},
+    [CACHE_REFERENCES]    = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CACHE_REFERENCES},
+    [CACHE_MISSES]        = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CACHE_MISSES},
+    [BRANCH_INSTRUCTIONS] = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_BRANCH_INSTRUCTIONS},
+    [BRANCH_MISSES]       = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_BRANCH_MISSES},
+    [BUS_CYCLES]          = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_BUS_CYCLES},
+    [REF_CPU_CYCLES]      = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_REF_CPU_CYCLES},
 };
 
 static inline error_t
@@ -53,7 +58,7 @@ init_perf_event_handler()
         fd_t timer_fd = syscall(SYS_perf_event_open, &timer, -1, cpu_idx, -1, 0);
         if (timer_fd < 0)
         {
-            perror("");
+            perror("Failed to get file descriptor for PERF_COUNT_SW_CPU_CLOCK");
             return EXIT_FAILURE;
         }
         
@@ -87,7 +92,7 @@ init_perf_event_map()
                 SYS_perf_event_open, &perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
             if (perf_event_fd < 0)
             {
-                perror("");
+                perror("Failed to get file descriptor for PERF_EVENT");
                 return EXIT_FAILURE;
             }
             

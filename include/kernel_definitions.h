@@ -32,9 +32,14 @@ struct packet_information {
 typedef int fd_t;
 
 enum perf_event_map_ids {
-	INSTRUCTIONS,
-	CPU_CYCLES,
-	REF_CPU_CYCLES,
+    CPU_CYCLES          = 0,
+	INSTRUCTIONS        = 1,
+    CACHE_REFERENCES    = 2,
+    CACHE_MISSES        = 3,
+    BRANCH_INSTRUCTIONS = 4,
+    BRANCH_MISSES       = 5,
+    BUS_CYCLES          = 6,
+	REF_CPU_CYCLES      = 7,
 	NUM_EVENT_TYPES,
 };
 
