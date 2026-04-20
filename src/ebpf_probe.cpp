@@ -103,7 +103,7 @@ init_perf_event_map()
                 SYS_perf_event_open, &perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
             if (perf_event_fd < 0)
             {
-                fprintf(stderr, "Failed to get file descriptor for perf event '%s' on core %d\n", 
+                fprintf(stderr, "Failed to get file descriptor for perf event '%s' on core %ld\n", 
                     perf_event_names[perf_event_idx], cpu_idx);
                 perror("");
                 continue;
