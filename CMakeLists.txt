@@ -16,8 +16,10 @@ add_custom_command(
     DEPENDS /sys/kernel/btf/vmlinux
 )
 
+message(STATUS "Created '${VMLINUX_HEADER}'")
+
 #------------------------------------------------------------------------------
-# Generate object file from src/probe.bpf.c using clang compiler
+# Generate object file from src/ebpf_probe.bpf.c using clang compiler
 #------------------------------------------------------------------------------
 add_custom_command(
     OUTPUT ${BPF_OBJECT}
@@ -32,8 +34,10 @@ add_custom_command(
 
 add_custom_target(bpf_object ALL DEPENDS ${VMLINUX_HEADER} ${BPF_OBJECT})
 
+message(STATUS "Created '${BPF_OBJECT}'")
+
 #------------------------------------------------------------------------------
-# Generate skeleton header file from probe.bpf.o using bpftool
+# Generate skeleton header file from ebpf_probe.bpf.o using bpftool
 #------------------------------------------------------------------------------
 add_custom_command(
     OUTPUT ${BPF_SKELETON}
@@ -44,12 +48,37 @@ add_custom_command(
 
 add_custom_target(bpf_skeleton ALL DEPENDS ${BPF_SKELETON})
 
+message(STATUS "Created '${BPF_SKELETON}'")
+
 #------------------------------------------------------------------------------
 # Compile src/kernel_module.c
 #------------------------------------------------------------------------------
+set(KERNEL_MODULE_SOURCE ${CMAKE_SOURCE_DIR}/src/kernel_module.c)
+set(KERNEL_MODULE_OBJECT ${CMAKE_SOURCE_DIR}/src/kernel_module.ko)
+set(KBUILD_FILE ${CMAKE_SOURCE_DIR}/src/Kbuild)
+
+execute_process(
+    COMMAND uname -r
+    OUTPUT_VARIABLE KERNEL_RELEASE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+message(STATUS "Kernel release: ${KERNEL_RELEASE}")
+
+file(WRITE ${KBUILD_FILE} "obj-m := kernel_module.o\nccflags-y := -I$(src)/../include\n")
+
+add_custom_command(
+    OUTPUT ${KERNEL_MODULE_OBJECT}
+    COMMAND $(MAKE) -C /lib/modules/${KERNEL_RELEASE}/build
+            M=${CMAKE_SOURCE_DIR}/src modules
+    DEPENDS ${KERNEL_MODULE_SOURCE} ${KBUILD_FILE}
+    COMMENT "Building kernel module"
+)
+
+add_custom_target(kernel_module ALL DEPENDS ${KERNEL_MODULE_OBJECT})
 
 #------------------------------------------------------------------------------
-# Compile as shared object
+# Compile
 #------------------------------------------------------------------------------
 add_library(stb_ds STATIC ${CMAKE_SOURCE_DIR}/lib/stb_ds/stb_ds.c)
 add_executable(
