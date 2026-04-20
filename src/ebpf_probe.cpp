@@ -106,7 +106,7 @@ init_perf_event_map()
                 fprintf(stderr, "Failed to get file descriptor for perf event '%s'\n", 
                     perf_event_names[perf_event_idx]);
                 perror("");
-                return EXIT_FAILURE;
+                continue;
             }
             
             __u32 key = cpu_idx * NUM_EVENT_TYPES + perf_event_idx;
