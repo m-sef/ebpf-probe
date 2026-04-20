@@ -51,8 +51,66 @@ static const char* perf_event_names[] = {
     [REF_CPU_CYCLES]      = "ref-cycles",
 };
 
+/**
+ * @brief Populate the 'rapl_map' inside of 'ebpf_probe.bpf.c'
+ * 
+ * @return error_t 
+ */
 static inline error_t
-init_perf_event_handler()
+ebpf_probe__init_rapl_map()
+{
+    assert(bpf != nullptr);
+    assert(num_cpus != 0);
+
+
+
+    return EXIT_SUCCESS;
+}
+
+/**
+ * @brief Populate the 'perf_event_map' inside of 'ebpf_probe.bpf.c'
+ * 
+ * @return error_t 
+ */
+static inline error_t
+ebpf_probe__init_perf_event_map()
+{
+    assert(bpf != nullptr);
+    assert(num_cpus != 0);
+
+    fd_t perf_event_map_fd = bpf_map__fd(bpf->maps.perf_event_map);
+
+    /* Add the file descriptors for each perf_event to the BPF program's perf_event_map */
+    for (size_t perf_event_idx = 0; perf_event_idx < NUM_EVENT_TYPES; perf_event_idx++)
+    {
+        for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
+        {
+
+            fd_t perf_event_fd = syscall(
+                SYS_perf_event_open, &perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
+            if (perf_event_fd < 0)
+            {
+                fprintf(stderr, "Failed to get file descriptor for perf event '%s' on core %ld\n", 
+                    perf_event_names[perf_event_idx], cpu_idx);
+                perror("");
+                continue;
+            }
+            
+            __u32 key = cpu_idx * NUM_EVENT_TYPES + perf_event_idx;
+            bpf_map_update_elem(perf_event_map_fd, &key, &perf_event_fd, BPF_ANY);
+        }
+    }
+
+    return EXIT_SUCCESS;
+}
+
+/**
+ * @brief Attach the 'perf_event_handler' program to the perf software CPU clock
+ * 
+ * @return error_t 
+ */
+static inline error_t
+ebpf_probe__init_perf_event_handler()
 {
     assert(bpf != nullptr);
     assert(num_cpus != 0);
@@ -79,38 +137,6 @@ init_perf_event_handler()
         {
             perror("Failed to attach BPF program to perf hook");
             return EXIT_FAILURE;
-        }
-    }
-
-    return EXIT_SUCCESS;
-}
-
-static inline error_t
-init_perf_event_map()
-{
-    assert(bpf != nullptr);
-    assert(num_cpus != 0);
-
-    fd_t perf_event_map_fd = bpf_map__fd(bpf->maps.perf_event_map);
-
-    /* Add the file descriptors for each perf_event to the BPF program's perf_event_map */
-    for (size_t perf_event_idx = 0; perf_event_idx < NUM_EVENT_TYPES; perf_event_idx++)
-    {
-        for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
-        {
-
-            fd_t perf_event_fd = syscall(
-                SYS_perf_event_open, &perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
-            if (perf_event_fd < 0)
-            {
-                fprintf(stderr, "Failed to get file descriptor for perf event '%s' on core %ld\n", 
-                    perf_event_names[perf_event_idx], cpu_idx);
-                perror("");
-                continue;
-            }
-            
-            __u32 key = cpu_idx * NUM_EVENT_TYPES + perf_event_idx;
-            bpf_map_update_elem(perf_event_map_fd, &key, &perf_event_fd, BPF_ANY);
         }
     }
 
@@ -146,11 +172,11 @@ ebpf_probe::init()
         return EXIT_FAILURE;
     }
 
-    err = init_perf_event_handler();
+    err = ebpf_probe__init_perf_event_handler();
     if (err != EXIT_SUCCESS)
         return err;
     
-    err = init_perf_event_map();
+    err = ebpf_probe__init_perf_event_map();
     if (err != EXIT_SUCCESS)
         return err;
 

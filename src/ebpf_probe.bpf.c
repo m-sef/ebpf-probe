@@ -20,6 +20,10 @@ struct {
     __type(value, struct counters);
 } counters_map SEC(".maps");
 
+/**
+ * @brief 
+ * 
+ */
 struct {
     __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
     __uint(max_entries, 1); /* Set at run time to num_cpus * NUM_EVENT_TYPES */
@@ -27,9 +31,13 @@ struct {
     __type(value, fd_t);
 } perf_event_map SEC(".maps");
 
+/**
+ * @brief
+ * 
+ */
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 1);
+    __uint(max_entries, 5); /* Only storing file descriptors relating to 5 RAPL domains */
     __type(key, __u32);
     __type(value, fd_t);
 } rapl_map SEC(".maps");
@@ -160,6 +168,8 @@ int perf_event_handler(struct bpf_perf_event_data* ctx)
 
     bpf_printk("[%d] Total Instructions: %ld\n", 
         cpu_idx, read_perf_event_counter(INSTRUCTIONS, cpu_idx));
+    
+    float spongebob = 0;
 
     return 0;
 }

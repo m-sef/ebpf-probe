@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "common_definitions.h"
+#include "definitions.hpp"
 
 static const char* rapl_domain_names[] = {
 	[RAPL_PKG]    = "pkg",

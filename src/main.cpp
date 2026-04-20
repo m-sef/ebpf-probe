@@ -6,6 +6,8 @@
 #include <errno.h>
 
 #include "ebpf_probe.hpp"
+#include "perf_event_handler.h"
+#include "rapl_handler.h"
 
 const char short_options[] = "hi:";
 
@@ -95,12 +97,31 @@ int main(int argc, char** argv)
 
     signal(SIGINT, handle_signal_interrupt);
 
+    perf_event_handler__init();
+    rapl_handler__init();
+
+    perf_event_handler__open_hardware_event_across_all_cpus(PERF_COUNT_HW_INSTRUCTIONS, -1);
+    perf_event_handler__open_hardware_event_across_all_cpus(PERF_COUNT_HW_CPU_CYCLES, -1);
+    perf_event_handler__open_hardware_event_across_all_cpus(PERF_COUNT_HW_REF_CPU_CYCLES, -1);
+    perf_event_handler__open_hardware_event_across_all_cpus(PERF_COUNT_HW_CACHE_MISSES, -1);
+
     while (running)
     {
-        printf("total_packets: %ld\n", ebpf_probe::get_total_packets_received());
-        printf("total_bytes  : %ld\n", ebpf_probe::get_total_rx_bytes_received());
+        printf("%ld,%ld,%ld,%ld,%ld,%f\n",
+            ebpf_probe::get_total_rx_bytes_received(),
+            perf_event_handler__read_hardware_event_across_all_cpus(PERF_COUNT_HW_INSTRUCTIONS),
+            perf_event_handler__read_hardware_event_across_all_cpus(PERF_COUNT_HW_CPU_CYCLES),
+            perf_event_handler__read_hardware_event_across_all_cpus(PERF_COUNT_HW_REF_CPU_CYCLES),
+            perf_event_handler__read_hardware_event_across_all_cpus(PERF_COUNT_HW_CACHE_MISSES),
+            rapl_handler__read_energy_counter_across_all());
+        
         sleep(1);
     }
+
+    perf_event_handler__close_hardware_event_across_all_cpus(PERF_COUNT_HW_INSTRUCTIONS);
+    perf_event_handler__close_hardware_event_across_all_cpus(PERF_COUNT_HW_CPU_CYCLES);
+    perf_event_handler__close_hardware_event_across_all_cpus(PERF_COUNT_HW_REF_CPU_CYCLES);
+    perf_event_handler__close_hardware_event_across_all_cpus(PERF_COUNT_HW_CACHE_MISSES);
 
     ebpf_probe::destroy();
     puts("");

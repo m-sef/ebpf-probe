@@ -51,12 +51,16 @@ add_custom_target(bpf_skeleton ALL DEPENDS ${BPF_SKELETON})
 #------------------------------------------------------------------------------
 # Compile as shared object
 #------------------------------------------------------------------------------
+add_library(stb_ds STATIC ${CMAKE_SOURCE_DIR}/lib/stb_ds/stb_ds.c)
 add_executable(
     ebpf_probe
     src/main.cpp
-    src/ebpf_probe.cpp)
+    src/ebpf_probe.cpp
+    src/perf_event_handler.c
+    src/rapl_handler.c)
 target_include_directories(ebpf_probe PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(ebpf_probe PRIVATE bpf)
+target_include_directories(ebpf_probe SYSTEM PUBLIC ${CMAKE_SOURCE_DIR}/lib/stb_ds)
+target_link_libraries(ebpf_probe PRIVATE bpf stb_ds)
 target_compile_options(ebpf_probe PRIVATE -O3 -Wall -Werror)
 
 add_dependencies(bpf_skeleton bpf_object)

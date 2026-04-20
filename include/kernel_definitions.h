@@ -43,4 +43,18 @@ enum perf_event_map_ids {
 	NUM_EVENT_TYPES,
 };
 
+struct rapl_domain {
+    __u64 scale;
+    fd_t  fd;
+};
+
+enum rapl_domains {
+    RAPL_PKG    = 0,
+    RAPL_CORE   = 1,
+    RAPL_UNCORE = 2,
+    RAPL_DRAM   = 3,
+    RAPL_PSYS   = 4,
+    RAPL_DOMAINS_MAX
+};
+
 #endif
