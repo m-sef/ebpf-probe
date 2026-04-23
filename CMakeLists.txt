@@ -51,11 +51,11 @@ add_custom_target(bpf_skeleton ALL DEPENDS ${BPF_SKELETON})
 message(STATUS "Created '${BPF_SKELETON}'")
 
 #------------------------------------------------------------------------------
-# Compile src/kernel_module.c
+# Compile src/ebpf_probe_proc_create_dir.c
 #------------------------------------------------------------------------------
-set(KERNEL_MODULE_SOURCE ${CMAKE_SOURCE_DIR}/src/kernel_module.c)
-set(KERNEL_MODULE_OBJECT ${CMAKE_SOURCE_DIR}/src/kernel_module.ko)
-set(KBUILD_FILE ${CMAKE_SOURCE_DIR}/src/Kbuild)
+set(KERNEL_MODULE_SOURCE ${CMAKE_SOURCE_DIR}/src/kernel_module/ebpf_probe_create_proc_dir.c)
+set(KERNEL_MODULE_OBJECT ${CMAKE_SOURCE_DIR}/src/kernel_module/ebpf_probe_create_proc_dir.o)
+set(KBUILD_FILE_PATH ${CMAKE_SOURCE_DIR}/src/kernel_module/Kbuild)
 
 execute_process(
     COMMAND uname -r
@@ -65,13 +65,13 @@ execute_process(
 
 message(STATUS "Kernel release: ${KERNEL_RELEASE}")
 
-file(WRITE ${KBUILD_FILE} "obj-m := kernel_module.o\nccflags-y := -I$(src)/../include\n")
+file(WRITE ${KBUILD_FILE_PATH} "obj-m := ebpf_probe_create_proc_dir.o\nccflags-y := -I$(src)/../include\n")
 
 add_custom_command(
     OUTPUT ${KERNEL_MODULE_OBJECT}
     COMMAND $(MAKE) -C /lib/modules/${KERNEL_RELEASE}/build
-            M=${CMAKE_SOURCE_DIR}/src modules
-    DEPENDS ${KERNEL_MODULE_SOURCE} ${KBUILD_FILE}
+            M=${CMAKE_SOURCE_DIR}/src/kernel_module modules
+    DEPENDS ${KERNEL_MODULE_SOURCE} ${KBUILD_FILE_PATH}
     COMMENT "Building kernel module"
 )
 
