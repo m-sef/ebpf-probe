@@ -5,7 +5,7 @@
 #include <getopt.h>
 #include <errno.h>
 
-#include "ebpf_probe.hpp"
+#include "userspace_loader.hpp"
 #include "perf_event_handler.h"
 #include "rapl_handler.h"
 

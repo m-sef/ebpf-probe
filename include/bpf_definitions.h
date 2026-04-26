@@ -4,8 +4,8 @@
  * @brief 
  * 
  */
-#ifndef SHARED_DEFINITIONS_H
-#define SHARED_DEFINITIONS_H
+#ifndef BPF_DEFINITIONS_H
+#define BPF_DEFINITIONS_H
 
 #ifdef __BPF__
 #include "vmlinux.h"
@@ -27,6 +27,10 @@ struct packet_information {
     __u16 source_port;
     __u16 destination_port;
     __u8 protocol;
+};
+
+struct core_entry {
+    __u64 placeholder;
 };
 
 typedef int fd_t;

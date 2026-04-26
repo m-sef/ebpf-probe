@@ -1,5 +1,5 @@
 /**
- * @file ebpf_probe.bpf.c
+ * @file ebpf_probe_data.bpf.c
  * @author Seth Moore (slmoore@hamilton.edu)
  * @brief eBPF program which uses the XDP hook to gather basic information about received packets
  * 
@@ -8,53 +8,11 @@
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
 
-#include <kernel_definitions.h>
+#include <bpf_definitions.h>
+#include <bpf_shared_maps.h>
 
-volatile bool record_individual_packet_information; /* Write packet information of received packets to packet_information_buffer */
-volatile size_t num_cpus;
-
-struct {
-    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 1);
-    __type(key, __u32);
-    __type(value, struct counters);
-} counters_map SEC(".maps");
-
-/**
- * @brief 
- * 
- */
-struct {
-    __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
-    __uint(max_entries, 1); /* Set at run time to num_cpus * NUM_EVENT_TYPES */
-    __type(key, __u32);
-    __type(value, fd_t);
-} perf_event_map SEC(".maps");
-
-/**
- * @brief
- * 
- */
-struct {
-    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 5); /* Only storing file descriptors relating to 5 RAPL domains */
-    __type(key, __u32);
-    __type(value, fd_t);
-} rapl_map SEC(".maps");
-
-struct {
-    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 1);
-    __type(key, __u32);
-    __type(value, __u32);
-} packet_information_buffer_size SEC(".maps");
-
-struct {
-    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 1 << 10);
-    __type(key, __u32);
-    __type(value, struct packet_information);
-} packet_information_buffer SEC(".maps");
+volatile const bool record_individual_packet_information; /* Write packet information of received packets to packet_information_buffer */
+volatile const __u32 num_cpus;
 
 static inline void
 increment_global_counters(
@@ -168,8 +126,6 @@ int perf_event_handler(struct bpf_perf_event_data* ctx)
 
     bpf_printk("[%d] Total Instructions: %ld\n", 
         cpu_idx, read_perf_event_counter(INSTRUCTIONS, cpu_idx));
-    
-    float spongebob = 0;
 
     return 0;
 }

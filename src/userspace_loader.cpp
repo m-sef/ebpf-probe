@@ -1,5 +1,5 @@
 /**
- * @file ebpf_probe.c
+ * @file userspace_loader.cpp
  * @author Seth Moore (slmoore@hamilton.edu)
  * @brief 
  * 
@@ -9,6 +9,7 @@
 #include <linux/types.h>
 #include <sys/syscall.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <net/if.h>
@@ -19,14 +20,16 @@
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
 
-#include "ebpf_probe.skel.h"
-#include "ebpf_probe.hpp"
+#include "ebpf_probe_data.skel.h"
+#include "ebpf_probe_iter.skel.h"
+#include "userspace_loader.hpp"
 #include "definitions.hpp"
-#include "kernel_definitions.h"
+#include "bpf_definitions.h"
 
 #define ROOT_PRIVILEGES 0
 
-static struct ebpf_probe_bpf* bpf;
+static struct ebpf_probe_data_bpf*  bpf;
+static struct ebpf_probe_iter_bpf** iterator_bpfs; 
 static size_t num_cpus = 0;
 
 static struct perf_event_attr perf_events[] = {
@@ -143,6 +146,96 @@ ebpf_probe__init_perf_event_handler()
     return EXIT_SUCCESS;
 }
 
+static inline void
+ebpf_probe__create_directories()
+{
+    mkdir("/sys/fs/bpf/ebpf_probe", 0x700);
+    mkdir("/sys/fs/bpf/ebpf_probe/core", 0x700);
+}
+
+static inline void
+ebpf_probe__remove_directories()
+{
+    rmdir("/sys/fs/bpf/ebpf_probe/core");
+}
+
+static inline error_t
+ebpf_probe__init_iterators()
+{
+    assert(bpf != nullptr);
+    assert(num_cpus != 0);
+
+    iterator_bpfs = (ebpf_probe_iter_bpf**)malloc(num_cpus * sizeof(ebpf_probe_iter_bpf*));
+
+    for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
+    {
+        iterator_bpfs[cpu_idx] = ebpf_probe_iter_bpf::open();
+        struct ebpf_probe_iter_bpf* iterator_bpf = iterator_bpfs[cpu_idx];
+
+        if (iterator_bpf == nullptr)
+        {
+            fprintf(stderr, "Failed to open iterator BPF object for core %ld\n", cpu_idx);
+            perror("");
+            return EXIT_FAILURE;
+        }
+
+        bpf_map__reuse_fd(iterator_bpf->maps.counters_map,                   bpf_map__fd(bpf->maps.counters_map));
+        bpf_map__reuse_fd(iterator_bpf->maps.packet_information_buffer_size, bpf_map__fd(bpf->maps.packet_information_buffer_size));
+        bpf_map__reuse_fd(iterator_bpf->maps.packet_information_buffer,      bpf_map__fd(bpf->maps.packet_information_buffer));
+        bpf_map__reuse_fd(iterator_bpf->maps.perf_event_map,                 bpf_map__fd(bpf->maps.perf_event_map));
+        bpf_map__reuse_fd(iterator_bpf->maps.rapl_map,                       bpf_map__fd(bpf->maps.rapl_map));
+        bpf_map__reuse_fd(iterator_bpf->maps.core_map,                       bpf_map__fd(bpf->maps.core_map));
+
+        iterator_bpf->rodata->target_cpu_idx = (uint32_t)cpu_idx;
+
+        if (ebpf_probe_iter_bpf::load(iterator_bpf) != 0)
+        {
+            fprintf(stderr, "Failed to load iterator BPF object for core %ld\n", cpu_idx);
+            perror("");
+            return EXIT_FAILURE;
+        }
+
+        union bpf_iter_link_info linfo = {};
+        linfo.map.map_fd = (uint32_t)bpf_map__fd(bpf->maps.core_map);
+
+        LIBBPF_OPTS(bpf_iter_attach_opts, attach_opts,
+            .link_info     = &linfo,
+            .link_info_len = sizeof(linfo),
+        );
+
+        struct bpf_link* link = bpf_program__attach_iter(
+            iterator_bpf->progs.dump_counters, &attach_opts);
+        if (link == nullptr)
+        {
+            fprintf(stderr, "Failed to attach iterator for core %ld\n", cpu_idx);
+            perror("");
+            return EXIT_FAILURE;
+        }
+
+        char file_path[64];
+        snprintf(file_path, sizeof(file_path), "/sys/fs/bpf/ebpf_probe/core/%ld", cpu_idx);
+
+        if (bpf_link__pin(link, file_path) != 0)
+        {
+            fprintf(stderr, "Failed to pin iterator link for core %ld\n", cpu_idx);
+            perror("");
+            bpf_link__destroy(link);
+            return EXIT_FAILURE;
+        }
+    }
+
+    return EXIT_SUCCESS;
+}
+
+static inline error_t
+ebpf_probe__reset_all_maps()
+{
+    assert(bpf != nullptr);
+    assert(num_cpus != 0);
+
+    return EXIT_SUCCESS;
+}
+
 error_t
 ebpf_probe::init()
 {
@@ -157,7 +250,7 @@ ebpf_probe::init()
         return EXIT_FAILURE;
     }
 
-    bpf = ebpf_probe_bpf::open();
+    bpf = ebpf_probe_data_bpf::open();
     if (bpf == nullptr)
     {
         fprintf(stderr, "Failed to open BPF object\n");
@@ -166,11 +259,13 @@ ebpf_probe::init()
 
     bpf_map__set_max_entries(bpf->maps.perf_event_map, num_cpus * NUM_EVENT_TYPES);
 
-    if (ebpf_probe_bpf::load(bpf) != 0)
+    if (ebpf_probe_data_bpf::load(bpf) != 0)
     {
         fprintf(stderr, "Failed to load BPF object\n");
         return EXIT_FAILURE;
     }
+
+    ebpf_probe__create_directories();
 
     err = ebpf_probe__init_perf_event_handler();
     if (err != EXIT_SUCCESS)
@@ -178,6 +273,10 @@ ebpf_probe::init()
     
     err = ebpf_probe__init_perf_event_map();
     if (err != EXIT_SUCCESS)
+        return err;
+    
+    err = ebpf_probe__init_iterators();
+    if (err != EXIT_FAILURE)
         return err;
 
     return EXIT_SUCCESS;
@@ -211,7 +310,16 @@ ebpf_probe::destroy()
 {
     assert(bpf != nullptr);
 
-    ebpf_probe_bpf::destroy(bpf);
+    ebpf_probe_data_bpf::destroy(bpf);
+
+    for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
+    {
+        char file_path[64];
+        snprintf(file_path, sizeof(file_path), "/sys/fs/bpf/ebpf_probe/core/%ld", cpu_idx);
+        unlink(file_path);
+    }
+
+    ebpf_probe__remove_directories();
 
     return EXIT_SUCCESS;
 }
@@ -219,17 +327,16 @@ ebpf_probe::destroy()
 size_t
 ebpf_probe::get_total_packets_received()
 {
-    size_t cpu_count = libbpf_num_possible_cpus();
     __u32 key = 0;
     __u64 sum = 0;
-    struct counters counters[cpu_count];
+    struct counters counters[num_cpus];
     int ret;
     int fd = bpf_map__fd(bpf->maps.counters_map);
 
     ret = bpf_map_lookup_elem(fd, &key, &counters);
     assert(ret >= 0);
 
-    for (size_t cpu_idx = 0; cpu_idx < cpu_count; cpu_idx++)
+    for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
     {
         sum += counters[cpu_idx].total_packets_received;
     }
@@ -239,17 +346,16 @@ ebpf_probe::get_total_packets_received()
 
 size_t ebpf_probe::get_total_rx_bytes_received()
 {
-    size_t cpu_count = libbpf_num_possible_cpus();
     __u32 key = 0;
     __u64 sum = 0;
-    struct counters counters[cpu_count];
+    struct counters counters[num_cpus];
     int ret;
     int fd = bpf_map__fd(bpf->maps.counters_map);
 
     ret = bpf_map_lookup_elem(fd, &key, &counters);
     assert(ret >= 0);
 
-    for (size_t cpu_idx = 0; cpu_idx < cpu_count; cpu_idx++)
+    for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
     {
         sum += counters[cpu_idx].total_rx_bytes_received;
     }
