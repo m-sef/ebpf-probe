@@ -10,7 +10,23 @@
 #include <bpf_definitions.h>
 #include <bpf_shared_maps.h>
 
+#define DEBUG_MSG \
+"%ld: {\n" \
+"    total_packets_received: %llu\n" \
+"    total_rx_bytes_received: %llu\n" \
+"    instructions: %ld\n" \
+"    cpu_cycles: %ld\n" \
+"    ref_cpu_cycles: %ld\n" \
+"    cache_misses: %ld\n" \
+"}\n"
+
 volatile const __u32 target_cpu_idx; /* This bpf object instance handles this core */
+
+static inline void
+flush()
+{
+    
+}
 
 SEC("iter/bpf_map_elem")
 int dump_counters(struct bpf_iter__bpf_map_elem* context)
@@ -25,7 +41,8 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
     if (!ptr)
         return 0;
     
-    BPF_SEQ_PRINTF(seq, "%llu,%llu,%ld,%ld,%ld,%ld\n", 
+    BPF_SEQ_PRINTF(seq, DEBUG_MSG,
+        target_cpu_idx,
         ptr->total_packets_received,
         ptr->total_rx_bytes_received,
         ptr->instructions,

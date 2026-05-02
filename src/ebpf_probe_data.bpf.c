@@ -45,6 +45,7 @@ int xdp_probe(struct xdp_md* context)
 
     increment_global_counters(1, data_end - data);
 
+#ifdef UNUSED
     if (!record_individual_packet_information)
         return XDP_PASS;
 
@@ -97,6 +98,7 @@ int xdp_probe(struct xdp_md* context)
     }
     
     (*size)++;
+#endif
 
     return XDP_PASS;
 }

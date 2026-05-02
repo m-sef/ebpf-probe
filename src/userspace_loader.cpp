@@ -65,8 +65,6 @@ ebpf_probe__init_rapl_map()
     assert(bpf != nullptr);
     assert(num_cpus != 0);
 
-
-
     return EXIT_SUCCESS;
 }
 
@@ -276,7 +274,7 @@ ebpf_probe::init()
         return err;
     
     err = ebpf_probe__init_iterators();
-    if (err != EXIT_FAILURE)
+    if (err != EXIT_SUCCESS)
         return err;
 
     return EXIT_SUCCESS;
