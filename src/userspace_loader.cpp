@@ -139,6 +139,8 @@ ebpf_probe__init_perf_event_handler()
             perror("Failed to attach BPF program to perf hook");
             return EXIT_FAILURE;
         }
+
+        close(timer_fd);
     }
 
     return EXIT_SUCCESS;
@@ -155,6 +157,18 @@ static inline void
 ebpf_probe__remove_directories()
 {
     rmdir("/sys/fs/bpf/ebpf_probe/core");
+    rmdir("/sys/fs/bpf/ebpf_probe");
+}
+
+static inline void
+ebpf_probe__remove_core_files()
+{
+    for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
+    {
+        char file_path[64];
+        snprintf(file_path, sizeof(file_path), "/sys/fs/bpf/ebpf_probe/core/%ld", cpu_idx);
+        unlink(file_path);
+    }
 }
 
 static inline error_t
@@ -310,13 +324,7 @@ ebpf_probe::destroy()
 
     ebpf_probe_data_bpf::destroy(bpf);
 
-    for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
-    {
-        char file_path[64];
-        snprintf(file_path, sizeof(file_path), "/sys/fs/bpf/ebpf_probe/core/%ld", cpu_idx);
-        unlink(file_path);
-    }
-
+    ebpf_probe__remove_core_files();
     ebpf_probe__remove_directories();
 
     return EXIT_SUCCESS;

@@ -87,11 +87,17 @@ int main(int argc, char** argv)
 
     err = ebpf_probe::init();
     if (err != EXIT_SUCCESS)
+    {
+        ebpf_probe::destroy();
         return err;
+    }
 
     err = ebpf_probe::attach_xdp(configuration.interface_name);
     if (err != EXIT_SUCCESS)
+    {
+        ebpf_probe::destroy();
         return err;
+    }
 
     signal(SIGINT, handle_signal_interrupt);
 
