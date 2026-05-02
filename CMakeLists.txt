@@ -76,16 +76,12 @@ add_dependencies(bpf_iter_skeleton bpf_iter_object)
 #------------------------------------------------------------------------------
 # Compile userspace loader
 #------------------------------------------------------------------------------
-add_library(stb_ds STATIC ${CMAKE_SOURCE_DIR}/lib/stb_ds/stb_ds.c)
 add_executable(
     ebpf_probe
     src/main.cpp
-    src/userspace_loader.cpp
-    src/perf_event_handler.c
-    src/rapl_handler.c)
+    src/userspace_loader.cpp)
 target_include_directories(ebpf_probe PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_include_directories(ebpf_probe SYSTEM PUBLIC ${CMAKE_SOURCE_DIR}/lib/stb_ds)
-target_link_libraries(ebpf_probe PRIVATE bpf stb_ds)
+target_link_libraries(ebpf_probe PRIVATE bpf)
 target_compile_options(ebpf_probe PRIVATE -O3 -Wall -Werror)
 
 add_dependencies(ebpf_probe bpf_data_skeleton bpf_iter_skeleton)

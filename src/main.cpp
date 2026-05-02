@@ -6,8 +6,6 @@
 #include <errno.h>
 
 #include "userspace_loader.hpp"
-#include "perf_event_handler.h"
-#include "rapl_handler.h"
 
 const char short_options[] = "hi:";
 
@@ -96,8 +94,6 @@ int main(int argc, char** argv)
         return err;
 
     signal(SIGINT, handle_signal_interrupt);
-
-    perf_event_handler__init();
 
     while (running)
         sleep(5);
