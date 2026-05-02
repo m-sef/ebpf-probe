@@ -9,6 +9,3 @@ CLAUDE.md
 *.log
 /logs/*
 !/logs/.gitkeep
-
-/src/kernel_module/*
-!/src/kernel_module/ebpf_probe_create_proc_dir.c
