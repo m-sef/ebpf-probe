@@ -10,12 +10,14 @@
 const char short_options[] = "hi:";
 
 const static struct option long_options[] = {
-    {"interface", required_argument, nullptr, 'i'},
     {"help",      no_argument,       nullptr, 'h'},
+    {"interface", required_argument, nullptr, 'i'},
 };
 
 static struct {
     char* interface_name; /* Listen for packets on this network interface */
+    int sample_frequency;
+    bool verbose;
 } configuration;
 
 static volatile sig_atomic_t running = true;

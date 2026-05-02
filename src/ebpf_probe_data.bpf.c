@@ -20,21 +20,12 @@ increment_global_counters(
         __u64 rx_bytes)
 {
     __u32 key = 0;
-    struct counters* ptr = bpf_map_lookup_elem(&counters_map, &key);
+    struct core_stats* ptr = bpf_map_lookup_elem(&per_core_stats_map, &key);
     if (ptr)
     {
         ptr->total_packets_received  += packets;
         ptr->total_rx_bytes_received += rx_bytes;
     }
-}
-
-static inline void
-reset_global_counters()
-{
-    __u32 key = 0;
-    struct counters* ptr = bpf_map_lookup_elem(&counters_map, &key);
-    if (ptr)
-        __builtin_memset(ptr, 0, sizeof(*ptr));
 }
 
 SEC("xdp")
@@ -126,23 +117,14 @@ int perf_event_handler(struct bpf_perf_event_data* ctx)
 {
     __u32 cpu_idx = bpf_get_smp_processor_id();
     __u32 key = 0;
-    /* TODO: Find better variable name for this later. */
-    struct core_entry* log = bpf_map_lookup_elem(&core_map, &key);
-    if (!log)
-        return 1; /* If you get here, something has gone catastrophically wrong... */
-    
-    /* TODO: Seriously, change these variable names!!! */
-    struct counters* ptr = bpf_map_lookup_elem(&counters_map, &key);
-    if (!ptr)
+    struct core_stats* core_stats_ptr = bpf_map_lookup_elem(&per_core_stats_map, &key);
+    if (!core_stats_ptr)
         return 1;
     
-    log->timestamp_ns            = bpf_ktime_get_ns(); /* Will probably be removed, doesn't really make sense... */
-    log->total_packets_received  = ptr->total_packets_received;
-    log->total_rx_bytes_received = ptr->total_rx_bytes_received;
-    log->instructions            = read_perf_event_counter(INSTRUCTIONS,   cpu_idx);
-    log->cpu_cycles              = read_perf_event_counter(CPU_CYCLES,     cpu_idx);
-    log->ref_cpu_cycles          = read_perf_event_counter(REF_CPU_CYCLES, cpu_idx);
-    log->cache_misses            = read_perf_event_counter(CACHE_MISSES,   cpu_idx);
+    core_stats_ptr->instructions   = read_perf_event_counter(INSTRUCTIONS,   cpu_idx);
+    core_stats_ptr->cpu_cycles     = read_perf_event_counter(CPU_CYCLES,     cpu_idx);
+    core_stats_ptr->ref_cpu_cycles = read_perf_event_counter(REF_CPU_CYCLES, cpu_idx);
+    core_stats_ptr->cache_misses   = read_perf_event_counter(CACHE_MISSES,   cpu_idx);
 
     return 0;
 }

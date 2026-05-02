@@ -191,12 +191,13 @@ ebpf_probe__init_iterators()
             return EXIT_FAILURE;
         }
 
-        bpf_map__reuse_fd(iterator_bpf->maps.counters_map,                   bpf_map__fd(bpf->maps.counters_map));
+#ifdef UNUSED
         bpf_map__reuse_fd(iterator_bpf->maps.packet_information_buffer_size, bpf_map__fd(bpf->maps.packet_information_buffer_size));
         bpf_map__reuse_fd(iterator_bpf->maps.packet_information_buffer,      bpf_map__fd(bpf->maps.packet_information_buffer));
-        bpf_map__reuse_fd(iterator_bpf->maps.perf_event_map,                 bpf_map__fd(bpf->maps.perf_event_map));
-        bpf_map__reuse_fd(iterator_bpf->maps.rapl_map,                       bpf_map__fd(bpf->maps.rapl_map));
-        bpf_map__reuse_fd(iterator_bpf->maps.core_map,                       bpf_map__fd(bpf->maps.core_map));
+#endif
+        bpf_map__reuse_fd(iterator_bpf->maps.perf_event_map,     bpf_map__fd(bpf->maps.perf_event_map));
+        bpf_map__reuse_fd(iterator_bpf->maps.rapl_map,           bpf_map__fd(bpf->maps.rapl_map));
+        bpf_map__reuse_fd(iterator_bpf->maps.per_core_stats_map, bpf_map__fd(bpf->maps.per_core_stats_map));
 
         iterator_bpf->rodata->target_cpu_idx = (uint32_t)cpu_idx;
 
@@ -208,7 +209,7 @@ ebpf_probe__init_iterators()
         }
 
         union bpf_iter_link_info linfo = {};
-        linfo.map.map_fd = (uint32_t)bpf_map__fd(bpf->maps.core_map);
+        linfo.map.map_fd = (uint32_t)bpf_map__fd(bpf->maps.per_core_stats_map);
 
         LIBBPF_OPTS(bpf_iter_attach_opts, attach_opts,
             .link_info     = &linfo,
@@ -328,43 +329,4 @@ ebpf_probe::destroy()
     ebpf_probe__remove_directories();
 
     return EXIT_SUCCESS;
-}
-
-size_t
-ebpf_probe::get_total_packets_received()
-{
-    __u32 key = 0;
-    __u64 sum = 0;
-    struct counters counters[num_cpus];
-    int ret;
-    int fd = bpf_map__fd(bpf->maps.counters_map);
-
-    ret = bpf_map_lookup_elem(fd, &key, &counters);
-    assert(ret >= 0);
-
-    for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
-    {
-        sum += counters[cpu_idx].total_packets_received;
-    }
-
-    return sum;
-}
-
-size_t ebpf_probe::get_total_rx_bytes_received()
-{
-    __u32 key = 0;
-    __u64 sum = 0;
-    struct counters counters[num_cpus];
-    int ret;
-    int fd = bpf_map__fd(bpf->maps.counters_map);
-
-    ret = bpf_map_lookup_elem(fd, &key, &counters);
-    assert(ret >= 0);
-
-    for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
-    {
-        sum += counters[cpu_idx].total_rx_bytes_received;
-    }
-
-    return sum;
 }

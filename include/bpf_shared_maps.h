@@ -12,14 +12,7 @@
 
 #include <bpf_definitions.h>
 
-/* Networking metrics */
-struct {
-    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 1);
-    __type(key, __u32);
-    __type(value, struct counters);
-} counters_map SEC(".maps");
-
+#ifdef UNUSED
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
     __uint(max_entries, 1);
@@ -33,6 +26,7 @@ struct {
     __type(key, __u32);
     __type(value, struct packet_information);
 } packet_information_buffer SEC(".maps");
+#endif
 
 /* Perf events */
 struct {
@@ -55,8 +49,8 @@ struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
     __uint(max_entries, 1);
     __type(key, __u32);
-    __type(value, struct core_entry);
-} core_map SEC(".maps");
+    __type(value, struct core_stats);
+} per_core_stats_map SEC(".maps");
 
 
 #endif

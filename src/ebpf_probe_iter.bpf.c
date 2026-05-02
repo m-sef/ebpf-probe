@@ -10,7 +10,7 @@
 #include <bpf_definitions.h>
 #include <bpf_shared_maps.h>
 
-#define DEBUG_MSG \
+#define VERBOSE_OUTPUT \
 "%ld: {\n" \
 "    total_packets_received: %llu\n" \
 "    total_rx_bytes_received: %llu\n" \
@@ -20,10 +20,13 @@
 "    cache_misses: %ld\n" \
 "}\n"
 
+#define DEFAULT_OUTPUT "%llu,%ld,%ld,%ld,%ld\n"
+
+volatile const bool verbose;
 volatile const __u32 target_cpu_idx; /* This bpf object instance handles this core */
 
 static inline void
-flush()
+flush(__u32 target_cpu_idx)
 {
     
 }
@@ -37,18 +40,32 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
         return 0;
     
     __u32 key = 0;
-    struct core_entry* ptr = bpf_map_lookup_percpu_elem(&core_map, &key, target_cpu_idx);
+    struct core_stats* ptr = bpf_map_lookup_percpu_elem(&per_core_stats_map, &key, target_cpu_idx);
     if (!ptr)
         return 0;
     
-    BPF_SEQ_PRINTF(seq, DEBUG_MSG,
-        target_cpu_idx,
-        ptr->total_packets_received,
-        ptr->total_rx_bytes_received,
-        ptr->instructions,
-        ptr->cpu_cycles,
-        ptr->ref_cpu_cycles,
-        ptr->cache_misses);
+    if (verbose)
+    {
+        BPF_SEQ_PRINTF(seq, VERBOSE_OUTPUT,
+            target_cpu_idx,
+            ptr->total_packets_received,
+            ptr->total_rx_bytes_received,
+            ptr->instructions,
+            ptr->cpu_cycles,
+            ptr->ref_cpu_cycles,
+            ptr->cache_misses);
+        return 0;
+    }
+    else
+    {
+        BPF_SEQ_PRINTF(seq, DEFAULT_OUTPUT,
+            ptr->total_rx_bytes_received,
+            ptr->instructions,
+            ptr->cpu_cycles,
+            ptr->ref_cpu_cycles,
+            ptr->cache_misses);
+        return 0;
+    }
     
     return 0;
 }

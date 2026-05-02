@@ -13,11 +13,7 @@
 #include <linux/types.h>
 #endif
 
-struct counters {
-	__u64 total_packets_received;
-	__u64 total_rx_bytes_received;
-};
-
+#ifdef UNUSED
 struct packet_information {
     __u64 time; /* Time, in nanoseconds, when the packet was received */
     __u64 size; /* The size of the entire packet, in bytes, including all headers */
@@ -28,9 +24,10 @@ struct packet_information {
     __u16 destination_port;
     __u8 protocol;
 };
+#endif
 
-struct core_entry {
-    __u64 timestamp_ns;
+typedef struct core_stats {
+    __u64 timestamp_ns; /* Currently unused, may be removed */
     __u64 total_packets_received;
     __u64 total_rx_bytes_received;
     __u64 instructions;
@@ -38,7 +35,7 @@ struct core_entry {
     __u64 ref_cpu_cycles;
     __u64 cache_misses;
     __u64 rapl_counter; /* energy-pkg - Raw counter, needs to be multiplied with appropiate domain scale in post-processing */
-};
+} core_stats_t;
 
 typedef int fd_t;
 
