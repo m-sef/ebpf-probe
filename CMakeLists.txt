@@ -7,9 +7,13 @@ set(BPF_DATA_SOURCE ${CMAKE_SOURCE_DIR}/src/ebpf_probe_data.bpf.c)
 set(BPF_DATA_OBJECT ${CMAKE_BINARY_DIR}/ebpf_probe_data.bpf.o)
 set(BPF_DATA_SKELETON ${CMAKE_SOURCE_DIR}/include/ebpf_probe_data.skel.h)
 
-set(BPF_ITER_SOURCE ${CMAKE_SOURCE_DIR}/src/ebpf_probe_iter.bpf.c)
-set(BPF_ITER_OBJECT ${CMAKE_BINARY_DIR}/ebpf_probe_iter.bpf.o)
-set(BPF_ITER_SKELETON ${CMAKE_SOURCE_DIR}/include/ebpf_probe_iter.skel.h)
+set(BPF_CORE_ITER_SOURCE ${CMAKE_SOURCE_DIR}/src/ebpf_probe_per_core_iterator.bpf.c)
+set(BPF_CORE_ITER_OBJECT ${CMAKE_BINARY_DIR}/ebpf_probe_per_core_iterator.bpf.o)
+set(BPF_CORE_ITER_SKELETON ${CMAKE_SOURCE_DIR}/include/ebpf_probe_per_core_iterator.skel.h)
+
+set(BPF_RAPL_ITER_SOURCE ${CMAKE_SOURCE_DIR}/src/ebpf_probe_per_rapl_domain_iterator.bpf.c)
+set(BPF_RAPL_ITER_OBJECT ${CMAKE_BINARY_DIR}/ebpf_probe_per_rapl_domain_iterator.bpf.o)
+set(BPF_RAPL_ITER_SKELETON ${CMAKE_SOURCE_DIR}/include/ebpf_probe_per_rapl_domain_iterator.skel.h)
 
 #------------------------------------------------------------------------------
 # Generate 'include/vmlinux.h' using bpftool
@@ -37,18 +41,30 @@ add_custom_command(
 )
 
 add_custom_command(
-    OUTPUT ${BPF_ITER_OBJECT}
+    OUTPUT ${BPF_CORE_ITER_OBJECT}
     COMMAND clang
         -g -O2
         -target bpf
         -I${CMAKE_SOURCE_DIR}/include
-        -c ${BPF_ITER_SOURCE}
-        -o ${BPF_ITER_OBJECT}
-    DEPENDS ${BPF_ITER_SOURCE}
+        -c ${BPF_CORE_ITER_SOURCE}
+        -o ${BPF_CORE_ITER_OBJECT}
+    DEPENDS ${BPF_CORE_ITER_SOURCE}
+)
+
+add_custom_command(
+    OUTPUT ${BPF_RAPL_ITER_OBJECT}
+    COMMAND clang
+        -g -O2
+        -target bpf
+        -I${CMAKE_SOURCE_DIR}/include
+        -c ${BPF_RAPL_ITER_SOURCE}
+        -o ${BPF_RAPL_ITER_OBJECT}
+    DEPENDS ${BPF_RAPL_ITER_SOURCE}
 )
 
 add_custom_target(bpf_data_object ALL DEPENDS ${VMLINUX_HEADER} ${BPF_DATA_OBJECT})
-add_custom_target(bpf_iter_object ALL DEPENDS ${VMLINUX_HEADER} ${BPF_ITER_OBJECT})
+add_custom_target(bpf_core_iter_object ALL DEPENDS ${VMLINUX_HEADER} ${BPF_CORE_ITER_OBJECT})
+add_custom_target(bpf_rapl_iter_object ALL DEPENDS ${VMLINUX_HEADER} ${BPF_RAPL_ITER_OBJECT})
 
 #------------------------------------------------------------------------------
 # Generate skeleton header file from ebpf_probe.bpf.o using bpftool
@@ -61,17 +77,27 @@ add_custom_command(
 )
 
 add_custom_command(
-    OUTPUT ${BPF_ITER_SKELETON}
+    OUTPUT ${BPF_CORE_ITER_SKELETON}
     COMMAND bpftool
-        gen skeleton ${BPF_ITER_OBJECT} > ${BPF_ITER_SKELETON}
-    DEPENDS ${BPF_ITER_OBJECT}
+        gen skeleton ${BPF_CORE_ITER_OBJECT} > ${BPF_CORE_ITER_SKELETON}
+    DEPENDS ${BPF_CORE_ITER_OBJECT}
+)
+
+add_custom_command(
+    OUTPUT ${BPF_RAPL_ITER_SKELETON}
+    COMMAND bpftool
+        gen skeleton ${BPF_RAPL_ITER_OBJECT} > ${BPF_RAPL_ITER_SKELETON}
+    DEPENDS ${BPF_RAPL_ITER_OBJECT}
 )
 
 add_custom_target(bpf_data_skeleton ALL DEPENDS ${BPF_DATA_SKELETON})
 add_dependencies(bpf_data_skeleton bpf_data_object)
 
-add_custom_target(bpf_iter_skeleton ALL DEPENDS ${BPF_ITER_SKELETON})
-add_dependencies(bpf_iter_skeleton bpf_iter_object)
+add_custom_target(bpf_core_iter_skeleton ALL DEPENDS ${BPF_CORE_ITER_SKELETON})
+add_dependencies(bpf_core_iter_skeleton bpf_core_iter_object)
+
+add_custom_target(bpf_rapl_iter_skeleton ALL DEPENDS ${BPF_RAPL_ITER_SKELETON})
+add_dependencies(bpf_rapl_iter_skeleton bpf_rapl_iter_object)
 
 #------------------------------------------------------------------------------
 # Compile userspace loader
@@ -84,4 +110,4 @@ target_include_directories(ebpf_probe PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(ebpf_probe PRIVATE bpf)
 target_compile_options(ebpf_probe PRIVATE -O3 -Wall -Werror)
 
-add_dependencies(ebpf_probe bpf_data_skeleton bpf_iter_skeleton)
+add_dependencies(ebpf_probe bpf_data_skeleton bpf_core_iter_skeleton bpf_rapl_iter_skeleton)

@@ -50,6 +50,19 @@ read_perf_event_counter(
     return value.counter;
 }
 
+static inline __u64
+read_rapl_domain_event_counter(
+        size_t rapl_domain_idx)
+{
+    __u32 key = rapl_domain_idx;
+    struct bpf_perf_event_value value = {};
+
+    if (bpf_perf_event_read_value(&rapl_map, key, &value, sizeof(value)) < 0)
+        return 0;
+
+    return value.counter;
+}
+
 SEC("perf_event")
 /**
  * @brief Attached to Software CPU Clock perf event, triggers every 1Hz
@@ -67,6 +80,15 @@ int perf_event_handler(struct bpf_perf_event_data* ctx)
     core_stats_ptr->cpu_cycles     = read_perf_event_counter(CPU_CYCLES,     cpu_idx);
     core_stats_ptr->ref_cpu_cycles = read_perf_event_counter(REF_CPU_CYCLES, cpu_idx);
     core_stats_ptr->cache_misses   = read_perf_event_counter(CACHE_MISSES,   cpu_idx);
+
+    for (size_t domain_idx = 0; domain_idx < RAPL_DOMAINS_MAX; domain_idx++)
+    {
+        struct domain_stats* domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &domain_idx);
+        if (!domain_stats_ptr)
+            return 1;
+        
+        domain_stats_ptr->value = read_rapl_domain_event_counter(domain_idx);
+    }
 
     return 0;
 }

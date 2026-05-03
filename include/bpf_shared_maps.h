@@ -36,5 +36,13 @@ struct {
     __type(value, struct core_stats);
 } per_core_stats_map SEC(".maps");
 
+/* Domain */
+struct {
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+    __uint(max_entries, 5); /* 5 Expected sockets */
+    __type(key, __u32);
+    __type(value, struct domain_stats);
+} per_rapl_domain_stats_map SEC(".maps");
+
 
 #endif

@@ -37,6 +37,18 @@ typedef struct core_stats {
     __u64 rapl_counter; /* energy-pkg - Raw counter, needs to be multiplied with appropiate domain scale in post-processing */
 } core_stats_t;
 
+typedef struct domain_stats {
+    __u64 value;
+} domain_stats_t;
+
+typedef struct rapl_stats {
+    __u64 core;
+    __u64 uncore;
+    __u64 dram;
+    __u64 pkg;
+    __u64 psys;
+} rapl_stats_t;
+
 typedef int fd_t;
 
 enum perf_event_map_ids {
@@ -49,11 +61,6 @@ enum perf_event_map_ids {
     BUS_CYCLES          = 6,
 	REF_CPU_CYCLES      = 7,
 	NUM_EVENT_TYPES,
-};
-
-struct rapl_domain {
-    __u64 scale;
-    fd_t  fd;
 };
 
 enum rapl_domains {

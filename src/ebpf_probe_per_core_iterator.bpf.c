@@ -1,5 +1,5 @@
 /**
- * @file ebpf_probe_iter.bpf.c
+ * @file ebpf_probe_core_iter.bpf.c
  * @author Seth Moore (slmoore@hamilton.edu)
  * @brief 
  * 
@@ -22,14 +22,8 @@
 
 #define DEFAULT_OUTPUT "%llu,%ld,%ld,%ld,%ld\n"
 
-volatile const bool verbose;
-volatile const __u32 target_cpu_idx; /* This bpf object instance handles this core */
-
-static inline void
-flush(__u32 target_cpu_idx)
-{
-    
-}
+volatile const bool verbose = true;
+volatile const __u32 target_cpu_idx;
 
 SEC("iter/bpf_map_elem")
 int dump_counters(struct bpf_iter__bpf_map_elem* context)

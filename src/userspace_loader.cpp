@@ -21,7 +21,8 @@
 #include <bpf/bpf.h>
 
 #include "ebpf_probe_data.skel.h"
-#include "ebpf_probe_iter.skel.h"
+#include "ebpf_probe_per_core_iterator.skel.h"
+#include "ebpf_probe_per_rapl_domain_iterator.skel.h"
 #include "userspace_loader.hpp"
 #include "definitions.hpp"
 #include "bpf_definitions.h"
@@ -29,7 +30,8 @@
 #define ROOT_PRIVILEGES 0
 
 static struct ebpf_probe_data_bpf*  bpf;
-static struct ebpf_probe_iter_bpf** iterator_bpfs; 
+static struct ebpf_probe_per_core_iterator_bpf** per_core_iterator_bpfs; 
+static struct ebpf_probe_per_rapl_domain_iterator_bpf** per_rapl_domain_iterator_bpfs;
 static size_t num_cpus = 0;
 
 static struct perf_event_attr perf_events[] = {
@@ -110,11 +112,6 @@ read_rapl_config(
 	return config;
 }
 
-/**
- * @brief Populate the 'rapl_map' inside of 'ebpf_probe.bpf.c'
- * 
- * @return error_t 
- */
 static inline error_t
 ebpf_probe__init_rapl_map()
 {
@@ -134,9 +131,8 @@ ebpf_probe__init_rapl_map()
             __NR_perf_event_open, &rapl_event, -1, 0, -1, 0);
         if (rapl_event_fd < 0)
         {
-            fprintf(stderr, "Failed to get file descriptor for rapl domain '%s'\n",
+            fprintf(stderr, "Failed to get file descriptor for rapl domain '%s', likely not available on this system\n",
                 rapl_domain_names[rapl_domain_idx]);
-            perror("");
             continue;
         }
 
@@ -147,11 +143,6 @@ ebpf_probe__init_rapl_map()
     return EXIT_SUCCESS;
 }
 
-/**
- * @brief Populate the 'perf_event_map' inside of 'ebpf_probe.bpf.c'
- * 
- * @return error_t 
- */
 static inline error_t
 ebpf_probe__init_perf_event_map()
 {
@@ -172,7 +163,6 @@ ebpf_probe__init_perf_event_map()
             {
                 fprintf(stderr, "Failed to get file descriptor for perf event '%s' on core %ld\n", 
                     perf_event_names[perf_event_idx], cpu_idx);
-                perror("");
                 continue;
             }
             
@@ -230,12 +220,14 @@ ebpf_probe__create_directories()
 {
     mkdir("/sys/fs/bpf/ebpf_probe", 0x700);
     mkdir("/sys/fs/bpf/ebpf_probe/core", 0x700);
+    mkdir("/sys/fs/bpf/ebpf_probe/rapl", 0x700);
 }
 
 static inline void
 ebpf_probe__remove_directories()
 {
     rmdir("/sys/fs/bpf/ebpf_probe/core");
+    rmdir("/sys/fs/bpf/ebpf_probe/rapl");
     rmdir("/sys/fs/bpf/ebpf_probe");
 }
 
@@ -250,18 +242,30 @@ ebpf_probe__remove_core_files()
     }
 }
 
+
+static inline void
+ebpf_probe__remove_rapl_files()
+{
+    for (size_t domain_idx = 0; domain_idx < RAPL_DOMAINS_MAX; domain_idx++)
+    {
+        char file_path[64];
+        snprintf(file_path, sizeof(file_path), "/sys/fs/bpf/ebpf_probe/rapl/%s", rapl_domain_names[domain_idx]);
+        unlink(file_path);
+    }
+}
+
 static inline error_t
-ebpf_probe__init_iterators()
+ebpf_probe__init_per_core_iterators()
 {
     assert(bpf != nullptr);
     assert(num_cpus != 0);
 
-    iterator_bpfs = (ebpf_probe_iter_bpf**)malloc(num_cpus * sizeof(ebpf_probe_iter_bpf*));
+    per_core_iterator_bpfs = (ebpf_probe_per_core_iterator_bpf**)malloc(num_cpus * sizeof(ebpf_probe_per_core_iterator_bpf*));
 
     for (size_t cpu_idx = 0; cpu_idx < num_cpus; cpu_idx++)
     {
-        iterator_bpfs[cpu_idx] = ebpf_probe_iter_bpf::open();
-        struct ebpf_probe_iter_bpf* iterator_bpf = iterator_bpfs[cpu_idx];
+        per_core_iterator_bpfs[cpu_idx] = ebpf_probe_per_core_iterator_bpf::open();
+        struct ebpf_probe_per_core_iterator_bpf* iterator_bpf = per_core_iterator_bpfs[cpu_idx];
 
         if (iterator_bpf == nullptr)
         {
@@ -276,7 +280,7 @@ ebpf_probe__init_iterators()
 
         iterator_bpf->rodata->target_cpu_idx = (uint32_t)cpu_idx;
 
-        if (ebpf_probe_iter_bpf::load(iterator_bpf) != 0)
+        if (ebpf_probe_per_core_iterator_bpf::load(iterator_bpf) != 0)
         {
             fprintf(stderr, "Failed to load iterator BPF object for core %ld\n", cpu_idx);
             perror("");
@@ -316,10 +320,63 @@ ebpf_probe__init_iterators()
 }
 
 static inline error_t
-ebpf_probe__reset_all_maps()
+ebpf_probe__init_per_rapl_domain_iterators()
 {
     assert(bpf != nullptr);
-    assert(num_cpus != 0);
+
+    per_rapl_domain_iterator_bpfs = (ebpf_probe_per_rapl_domain_iterator_bpf**)malloc(RAPL_DOMAINS_MAX * sizeof(ebpf_probe_per_rapl_domain_iterator_bpf*));
+
+    for (size_t domain_idx = 0; domain_idx < RAPL_DOMAINS_MAX; domain_idx++)
+    {
+        per_rapl_domain_iterator_bpfs[domain_idx] = ebpf_probe_per_rapl_domain_iterator_bpf::open();
+        struct ebpf_probe_per_rapl_domain_iterator_bpf* iterator_bpf = per_rapl_domain_iterator_bpfs[domain_idx];
+
+        if (iterator_bpf == nullptr)
+        {
+            fprintf(stderr, "Failed to open iterator BPF object for domain %ld\n", domain_idx);
+            perror("");
+            return EXIT_FAILURE;
+        }
+
+        bpf_map__reuse_fd(iterator_bpf->maps.per_rapl_domain_stats_map, bpf_map__fd(bpf->maps.per_rapl_domain_stats_map));
+
+        iterator_bpf->rodata->target_rapl_domain_idx = (uint32_t)domain_idx;
+
+        if (ebpf_probe_per_rapl_domain_iterator_bpf::load(iterator_bpf) != 0)
+        {
+            fprintf(stderr, "Failed to load iterator BPF object for domain %ld\n", domain_idx);
+            perror("");
+            return EXIT_FAILURE;
+        }
+
+        union bpf_iter_link_info linfo = {};
+        linfo.map.map_fd = (uint32_t)bpf_map__fd(bpf->maps.per_rapl_domain_stats_map);
+
+        LIBBPF_OPTS(bpf_iter_attach_opts, attach_opts,
+            .link_info     = &linfo,
+            .link_info_len = sizeof(linfo),
+        );
+
+        struct bpf_link* link = bpf_program__attach_iter(
+            iterator_bpf->progs.dump_counters, &attach_opts);
+        if (link == nullptr)
+        {
+            fprintf(stderr, "Failed to attach iterator for domain %ld\n", domain_idx);
+            perror("");
+            return EXIT_FAILURE;
+        }
+
+        char file_path[64];
+        snprintf(file_path, sizeof(file_path), "/sys/fs/bpf/ebpf_probe/rapl/%s", rapl_domain_names[domain_idx]);
+
+        if (bpf_link__pin(link, file_path) != 0)
+        {
+            fprintf(stderr, "Failed to pin iterator link for domain %ld\n", domain_idx);
+            perror("");
+            bpf_link__destroy(link);
+            return EXIT_FAILURE;
+        }
+    }
 
     return EXIT_SUCCESS;
 }
@@ -367,7 +424,11 @@ ebpf_probe::init()
     if (err != EXIT_SUCCESS)
         return err;
     
-    err = ebpf_probe__init_iterators();
+    err = ebpf_probe__init_per_core_iterators();
+    if (err != EXIT_SUCCESS)
+        return err;
+    
+    err = ebpf_probe__init_per_rapl_domain_iterators();
     if (err != EXIT_SUCCESS)
         return err;
 
@@ -405,6 +466,7 @@ ebpf_probe::destroy()
     ebpf_probe_data_bpf::destroy(bpf);
 
     ebpf_probe__remove_core_files();
+    ebpf_probe__remove_rapl_files();
     ebpf_probe__remove_directories();
 
     return EXIT_SUCCESS;
