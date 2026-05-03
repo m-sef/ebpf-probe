@@ -28,6 +28,7 @@
 #include "bpf_definitions.h"
 
 #define ROOT_PRIVILEGES 0
+
 #define FOREACH_CORE(n) for (size_t n = 0; n < num_cpus; n++)
 #define FOREACH_PERF_EVENT(n) for (size_t n = 0; n < NUM_EVENT_TYPES; n++)
 #define FOREACH_RAPL_DOMAIN(n) for (size_t n = 0; n < RAPL_DOMAINS_MAX; n++)
@@ -135,7 +136,7 @@ ebpf_probe__init_rapl_map()
             __NR_perf_event_open, &rapl_event, -1, 0, -1, 0);
         if (rapl_event_fd < 0)
         {
-            fprintf(stderr, "[WARNING] Failed to get file descriptor for rapl domain '%s', likely not available on this system\n",
+            WARNING("Failed to get file descriptor for rapl domain '%s', likely not available on this system\n",
                 rapl_domain_names[domain_idx]);
             continue;
         }
@@ -164,7 +165,7 @@ ebpf_probe__init_perf_event_map()
                 SYS_perf_event_open, &perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
             if (perf_event_fd < 0)
             {
-                fprintf(stderr, "[WARNING] Failed to get file descriptor for perf event '%s' on core %ld, likely not available on this system\n", 
+                WARNING("Failed to get file descriptor for perf event '%s' on core %ld, likely not available on this system",
                     perf_event_names[perf_event_idx], cpu_idx);
                 continue;
             }
@@ -200,7 +201,7 @@ ebpf_probe__init_perf_event_handler()
         fd_t timer_fd = syscall(SYS_perf_event_open, &timer, -1, cpu_idx, -1, 0);
         if (timer_fd < 0)
         {
-            perror("[ERROR]   Failed to get file descriptor for PERF_COUNT_SW_CPU_CLOCK");
+            ERROR("Failed to get file descriptor for PERF_COUNT_SW_CPU_CLOCK\n");
             return EXIT_FAILURE;
         }
         
@@ -208,7 +209,7 @@ ebpf_probe__init_perf_event_handler()
             bpf->progs.perf_event_handler, timer_fd);
         if (!link)
         {
-            perror("[ERROR]   Failed to attach BPF program to perf hook");
+            ERROR("Failed to attach BPF program to perf hook\n");
             return EXIT_FAILURE;
         }
 
@@ -272,8 +273,7 @@ ebpf_probe__init_per_core_iterators()
 
         if (iterator_bpf == nullptr)
         {
-            fprintf(stderr, "[ERROR]   Failed to open iterator BPF object for core %ld\n", cpu_idx);
-            perror("");
+            ERROR("Failed to open iterator BPF object for core %ld\n", cpu_idx);
             return EXIT_FAILURE;
         }
 
@@ -286,8 +286,7 @@ ebpf_probe__init_per_core_iterators()
 
         if (ebpf_probe_per_core_iterator_bpf::load(iterator_bpf) != 0)
         {
-            fprintf(stderr, "[ERROR]   Failed to load iterator BPF object for core %ld\n", cpu_idx);
-            perror("");
+            ERROR("Failed to load iterator BPF object for core %ld\n", cpu_idx);
             return EXIT_FAILURE;
         }
 
@@ -303,8 +302,7 @@ ebpf_probe__init_per_core_iterators()
             iterator_bpf->progs.dump_counters, &attach_opts);
         if (link == nullptr)
         {
-            fprintf(stderr, "[ERROR]   Failed to attach iterator for core %ld\n", cpu_idx);
-            perror("");
+            ERROR("Failed to attach iterator for core %ld\n", cpu_idx);
             return EXIT_FAILURE;
         }
 
@@ -313,8 +311,7 @@ ebpf_probe__init_per_core_iterators()
 
         if (bpf_link__pin(link, file_path) != 0)
         {
-            fprintf(stderr, "[ERROR]   Failed to pin iterator link for core %ld\n", cpu_idx);
-            perror("");
+            ERROR("Failed to pin iterator link for core %ld\n", cpu_idx);
             bpf_link__destroy(link);
             return EXIT_FAILURE;
         }
@@ -337,8 +334,7 @@ ebpf_probe__init_per_rapl_domain_iterators()
 
         if (iterator_bpf == nullptr)
         {
-            fprintf(stderr, "[ERROR]   Failed to open iterator BPF object for domain %ld\n", domain_idx);
-            perror("");
+            ERROR("Failed to open iterator BPF object for domain %ld\n", domain_idx);
             return EXIT_FAILURE;
         }
 
@@ -349,8 +345,7 @@ ebpf_probe__init_per_rapl_domain_iterators()
 
         if (ebpf_probe_per_rapl_domain_iterator_bpf::load(iterator_bpf) != 0)
         {
-            fprintf(stderr, "[ERROR]   Failed to load iterator BPF object for domain %ld\n", domain_idx);
-            perror("");
+            ERROR("Failed to load iterator BPF object for domain %ld\n", domain_idx);
             return EXIT_FAILURE;
         }
 
@@ -366,8 +361,7 @@ ebpf_probe__init_per_rapl_domain_iterators()
             iterator_bpf->progs.dump_counters, &attach_opts);
         if (link == nullptr)
         {
-            fprintf(stderr, "[ERROR]   Failed to attach iterator for domain %ld\n", domain_idx);
-            perror("");
+            ERROR("Failed to attach iterator for domain %ld\n", domain_idx);
             return EXIT_FAILURE;
         }
 
@@ -376,8 +370,7 @@ ebpf_probe__init_per_rapl_domain_iterators()
 
         if (bpf_link__pin(link, file_path) != 0)
         {
-            fprintf(stderr, "[ERROR]   Failed to pin iterator link for domain %ld\n", domain_idx);
-            perror("");
+            ERROR("Failed to pin iterator link for domain %ld\n", domain_idx);
             bpf_link__destroy(link);
             return EXIT_FAILURE;
         }
@@ -398,14 +391,14 @@ ebpf_probe::init(
 
     if (getuid() != ROOT_PRIVILEGES)
     {
-        fprintf(stderr, "[ERROR]   Program must be run with root privileges\n");
+        ERROR("Program must be run with root privileges\n");
         return EXIT_FAILURE;
     }
 
     bpf = ebpf_probe_data_bpf::open();
     if (bpf == nullptr)
     {
-        fprintf(stderr, "[ERROR]   Failed to open BPF object\n");
+        ERROR("Failed to open BPF object\n");
         return EXIT_FAILURE;
     }
 
@@ -413,7 +406,7 @@ ebpf_probe::init(
 
     if (ebpf_probe_data_bpf::load(bpf) != 0)
     {
-        fprintf(stderr, "[ERROR]   Failed to load BPF object\n");
+        ERROR("Failed to load BPF object\n");
         return EXIT_FAILURE;
     }
 
@@ -451,14 +444,14 @@ ebpf_probe::attach_xdp(
     unsigned int interface_index = if_nametoindex(interface_name.c_str());
     if (!interface_index)
     {
-        fprintf(stderr, "[ERROR]   Could not find interface \"%s\"\n", interface_name.c_str());
+        ERROR("Could not find interface \"%s\"\n", interface_name.c_str());
         return EXIT_FAILURE;
     }
 
     bpf->links.xdp_probe = bpf_program__attach_xdp(bpf->progs.xdp_probe, interface_index);
     if (!bpf->links.xdp_probe)
     {
-        perror("[ERROR]   Failed to attach BPF program to XDP hook");
+        ERROR("Failed to attach BPF program to XDP hook\n");
         return EXIT_FAILURE;
     }
 

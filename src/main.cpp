@@ -16,7 +16,11 @@ const static struct option long_options[] = {
     {"verbose",   no_argument,       nullptr, 'v'},
 };
 
-static struct options options;
+static struct options options = {
+    .interface_name = nullptr,
+    .sample_frequency = 1,
+    .verbose = false,
+};
 
 static volatile sig_atomic_t running = true;
 
