@@ -54,7 +54,6 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
             ptr->cpu_cycles,
             ptr->ref_cpu_cycles,
             ptr->cache_misses);
-        return 0;
     }
     else
     {
@@ -64,7 +63,6 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
             ptr->cpu_cycles,
             ptr->ref_cpu_cycles,
             ptr->cache_misses);
-        return 0;
     }
     
     return 0;

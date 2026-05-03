@@ -54,6 +54,62 @@ static const char* perf_event_names[] = {
     [REF_CPU_CYCLES]      = "ref-cycles",
 };
 
+static const char* rapl_domain_names[] = {
+	[RAPL_PKG]    = "pkg",
+	[RAPL_CORE]   = "cores",
+	[RAPL_UNCORE] = "uncore",
+	[RAPL_DRAM]   = "ram",
+	[RAPL_PSYS]   = "psys",
+};
+
+static inline int
+read_rapl_type()
+{
+	FILE* file;
+	int type = -1;
+
+	file = fopen("/sys/bus/event_source/devices/power/type", "r");
+	if (!file)
+		return -1;
+	
+	if (fscanf(file, "%d", &type) != 1)
+	{
+		fclose(file);
+		return -1;
+	}
+
+	fclose(file);
+	return type;
+}
+
+static inline int
+read_rapl_config(
+        const char* domain)
+{
+	char path[256];
+	FILE* file;
+	int config = -1;
+	char buffer[64];
+
+	snprintf(path, sizeof(path), "/sys/bus/event_source/devices/power/events/energy-%s", domain);
+	file = fopen(path, "r");
+	if (!file)
+		return -1;
+
+	// Parse "event=0xXX" format (hexadecimal)
+	if (fgets(buffer, sizeof(buffer), file))
+	{
+		if (sscanf(buffer, "event=%i", &config) != 1)
+		{
+			// Try parsing as hex if decimal fails
+			sscanf(buffer, "event=0x%x", &config);
+		}
+	}
+
+	fclose(file);
+	return config;
+}
+
 /**
  * @brief Populate the 'rapl_map' inside of 'ebpf_probe.bpf.c'
  * 
@@ -64,6 +120,29 @@ ebpf_probe__init_rapl_map()
 {
     assert(bpf != nullptr);
     assert(num_cpus != 0);
+
+    fd_t rapl_map_fd = bpf_map__fd(bpf->maps.rapl_map);
+
+    for (size_t rapl_domain_idx = 0; rapl_domain_idx < RAPL_DOMAINS_MAX; rapl_domain_idx++)
+    {
+        struct perf_event_attr rapl_event = {};
+        rapl_event.type = read_rapl_type();
+        rapl_event.size = sizeof(struct perf_event_attr);
+        rapl_event.config = read_rapl_config(rapl_domain_names[rapl_domain_idx]);
+
+        fd_t rapl_event_fd = syscall(
+            __NR_perf_event_open, &rapl_event, -1, 0, -1, 0);
+        if (rapl_event_fd < 0)
+        {
+            fprintf(stderr, "Failed to get file descriptor for rapl domain '%s'\n",
+                rapl_domain_names[rapl_domain_idx]);
+            perror("");
+            continue;
+        }
+
+        __u32 key = rapl_domain_idx;
+        bpf_map_update_elem(rapl_map_fd, &key, &rapl_event_fd, BPF_ANY);
+    }
 
     return EXIT_SUCCESS;
 }
@@ -97,7 +176,7 @@ ebpf_probe__init_perf_event_map()
                 continue;
             }
             
-            __u32 key = cpu_idx * NUM_EVENT_TYPES + perf_event_idx;
+            __u32 key = (cpu_idx * NUM_EVENT_TYPES) + perf_event_idx;
             bpf_map_update_elem(perf_event_map_fd, &key, &perf_event_fd, BPF_ANY);
         }
     }
@@ -191,10 +270,6 @@ ebpf_probe__init_iterators()
             return EXIT_FAILURE;
         }
 
-#ifdef UNUSED
-        bpf_map__reuse_fd(iterator_bpf->maps.packet_information_buffer_size, bpf_map__fd(bpf->maps.packet_information_buffer_size));
-        bpf_map__reuse_fd(iterator_bpf->maps.packet_information_buffer,      bpf_map__fd(bpf->maps.packet_information_buffer));
-#endif
         bpf_map__reuse_fd(iterator_bpf->maps.perf_event_map,     bpf_map__fd(bpf->maps.perf_event_map));
         bpf_map__reuse_fd(iterator_bpf->maps.rapl_map,           bpf_map__fd(bpf->maps.rapl_map));
         bpf_map__reuse_fd(iterator_bpf->maps.per_core_stats_map, bpf_map__fd(bpf->maps.per_core_stats_map));
@@ -285,6 +360,10 @@ ebpf_probe::init()
         return err;
     
     err = ebpf_probe__init_perf_event_map();
+    if (err != EXIT_SUCCESS)
+        return err;
+    
+    err = ebpf_probe__init_rapl_map();
     if (err != EXIT_SUCCESS)
         return err;
     

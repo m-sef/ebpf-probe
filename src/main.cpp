@@ -18,7 +18,7 @@ static struct {
     char* interface_name; /* Listen for packets on this network interface */
     int sample_frequency;
     bool verbose;
-} configuration;
+} options;
 
 static volatile sig_atomic_t running = true;
 
@@ -66,7 +66,7 @@ parse_arguments(
             exit(EXIT_FAILURE);
               
         case 'i':
-            configuration.interface_name = optarg;
+            options.interface_name = optarg;
             break;
               
         default:
@@ -75,7 +75,7 @@ parse_arguments(
         }
     }
 
-    if (configuration.interface_name == nullptr)
+    if (options.interface_name == nullptr)
     {
         put_usage(argv[0]);
         exit(EXIT_FAILURE);
@@ -94,7 +94,7 @@ int main(int argc, char** argv)
         return err;
     }
 
-    err = ebpf_probe::attach_xdp(configuration.interface_name);
+    err = ebpf_probe::attach_xdp(options.interface_name);
     if (err != EXIT_SUCCESS)
     {
         ebpf_probe::destroy();

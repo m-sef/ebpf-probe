@@ -11,11 +11,8 @@
 #include <bpf_definitions.h>
 #include <bpf_shared_maps.h>
 
-volatile const bool record_individual_packet_information; /* Write packet information of received packets to packet_information_buffer */
-volatile const __u32 num_cpus;
-
 static inline void
-increment_global_counters(
+increment_core_stats_network_counters(
         __u64 packets,
         __u64 rx_bytes)
 {
@@ -34,62 +31,7 @@ int xdp_probe(struct xdp_md* context)
     void* data     = (void*)(long)context->data;
     void* data_end = (void*)(long)context->data_end;
 
-    increment_global_counters(1, data_end - data);
-
-#ifdef UNUSED
-    if (!record_individual_packet_information)
-        return XDP_PASS;
-
-    struct ethhdr* ethernet_header = data;
-    if ((void*)ethernet_header + sizeof(*ethernet_header) > data_end)
-        return XDP_PASS;
-
-    if (ethernet_header->h_proto != bpf_ntohs(0x0800))
-        return XDP_PASS;
-
-    struct iphdr* ip_header = data + sizeof(*ethernet_header);
-    if ((void*)ip_header + sizeof(*ip_header) > data_end)
-        return XDP_PASS;
-    
-    __u32 key = 0;
-    __u32* size = bpf_map_lookup_elem(&packet_information_buffer_size, &key);
-    if (!size)
-        return XDP_PASS; /* If you get here, something has gone catastrophically wrong... */
-    
-    struct packet_information* record = bpf_map_lookup_elem(&packet_information_buffer, size);
-    if (!record)
-        return XDP_PASS;
-
-    record->time                = bpf_ktime_get_ns();
-    record->size                = data_end - data;
-    record->rx_queue_index      = context->rx_queue_index;
-    record->source_address      = ip_header->saddr;
-    record->destination_address = ip_header->daddr;
-    record->source_port         = 0;
-    record->destination_port    = 0;
-    record->protocol            = ip_header->protocol;
-
-    if (ip_header->protocol == IPPROTO_UDP)
-    {
-        struct udphdr* udp_header = (void*)ip_header + sizeof(*ip_header);
-        if ((void*)udp_header + sizeof(*udp_header) > data_end)
-            return XDP_PASS;
-        
-        record->source_port = bpf_ntohs(udp_header->source);
-        record->destination_port = bpf_ntohs(udp_header->dest);
-    }
-    else if (ip_header->protocol == IPPROTO_TCP)
-    {
-        struct tcphdr* tcp_header = (void*)ip_header + sizeof(*ip_header);
-        if ((void*)tcp_header + sizeof(*tcp_header) > data_end)
-            return XDP_PASS;
-
-        record->source_port = bpf_ntohs(tcp_header->source);
-        record->destination_port = bpf_ntohs(tcp_header->dest);
-    }
-    
-    (*size)++;
-#endif
+    increment_core_stats_network_counters(1, data_end - data);
 
     return XDP_PASS;
 }
@@ -99,7 +41,7 @@ read_perf_event_counter(
         size_t perf_event_type,
         size_t cpu_idx)
 {
-    __u32 key = cpu_idx * NUM_EVENT_TYPES + perf_event_type;
+    __u32 key = (cpu_idx * NUM_EVENT_TYPES) + perf_event_type;
     struct bpf_perf_event_value value = {};
 
     if (bpf_perf_event_read_value(&perf_event_map, key, &value, sizeof(value)) < 0)

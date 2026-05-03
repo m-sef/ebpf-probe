@@ -22,8 +22,6 @@ namespace ebpf_probe
 
     error_t attach_xdp(const std::string& interface_name);
 
-    error_t set_verbose(bool verbose);
-
     size_t get_total_packets_received();
     size_t get_total_rx_bytes_received();
 }

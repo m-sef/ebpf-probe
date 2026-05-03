@@ -12,22 +12,6 @@
 
 #include <bpf_definitions.h>
 
-#ifdef UNUSED
-struct {
-    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 1);
-    __type(key, __u32);
-    __type(value, __u32);
-} packet_information_buffer_size SEC(".maps");
-
-struct {
-    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 1 << 10);
-    __type(key, __u32);
-    __type(value, struct packet_information);
-} packet_information_buffer SEC(".maps");
-#endif
-
 /* Perf events */
 struct {
     __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
@@ -38,7 +22,7 @@ struct {
 
 /* RAPL */
 struct {
-    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
     __uint(max_entries, 5); /* Only storing file descriptors relating to 5 RAPL domains */
     __type(key, __u32);
     __type(value, fd_t);
