@@ -5,20 +5,18 @@
 #include <getopt.h>
 #include <errno.h>
 
+#include "definitions.hpp"
 #include "userspace_loader.hpp"
 
-const char short_options[] = "hi:";
+const char short_options[] = "hi:v";
 
 const static struct option long_options[] = {
     {"help",      no_argument,       nullptr, 'h'},
     {"interface", required_argument, nullptr, 'i'},
+    {"verbose",   no_argument,       nullptr, 'v'},
 };
 
-static struct {
-    char* interface_name; /* Listen for packets on this network interface */
-    int sample_frequency;
-    bool verbose;
-} options;
+static struct options options;
 
 static volatile sig_atomic_t running = true;
 
@@ -33,7 +31,7 @@ static inline void
 put_usage(
         char* program_name)
 {
-    fprintf(stderr, "usage: %s -i interface [-h]\n", program_name);
+    fprintf(stderr, "usage: %s -i interface [-h][-v]\n", program_name);
 }
 
 static inline void
@@ -68,6 +66,10 @@ parse_arguments(
         case 'i':
             options.interface_name = optarg;
             break;
+        
+        case 'v':
+            options.verbose = true;
+            break;
               
         default:
             put_usage(argv[0]);
@@ -87,7 +89,7 @@ int main(int argc, char** argv)
     error_t err;
     parse_arguments(argc, argv);
 
-    err = ebpf_probe::init();
+    err = ebpf_probe::init(options);
     if (err != EXIT_SUCCESS)
     {
         ebpf_probe::destroy();

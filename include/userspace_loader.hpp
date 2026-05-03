@@ -18,7 +18,7 @@
 
 namespace ebpf_probe
 {
-    error_t init();
+    error_t init(const struct options& opt);
     error_t destroy();
 
     error_t attach_xdp(const std::string& interface_name);

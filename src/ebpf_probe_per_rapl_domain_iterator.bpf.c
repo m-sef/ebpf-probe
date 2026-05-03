@@ -11,13 +11,15 @@
 #include <bpf_shared_maps.h>
 
 #define VERBOSE_OUTPUT \
-"%s: {\n" \
+"# RAPL Domain\n" \
+"%s:\n" \
 "    value: %llu\n" \
-"}\n"
+"    scale: %s\n" \
+"    unit: %s\n"
 
 #define DEFAULT_OUTPUT "%llu\n"
 
-volatile const bool verbose = true;
+volatile const bool verbose;
 volatile const __u32 target_rapl_domain_idx;
 
 static const char rapl_domain_names[][8] = {
@@ -50,7 +52,9 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
     {
         BPF_SEQ_PRINTF(seq, VERBOSE_OUTPUT,
             rapl_domain_names[target_rapl_domain_idx],
-            ptr->value);
+            ptr->value,
+            "2.3283064365386962890625e-10",
+            "Joules");
     }
     else
     {

@@ -32,6 +32,7 @@
 static struct ebpf_probe_data_bpf*  bpf;
 static struct ebpf_probe_per_core_iterator_bpf** per_core_iterator_bpfs; 
 static struct ebpf_probe_per_rapl_domain_iterator_bpf** per_rapl_domain_iterator_bpfs;
+static struct options options;
 static size_t num_cpus = 0;
 
 static struct perf_event_attr perf_events[] = {
@@ -279,6 +280,7 @@ ebpf_probe__init_per_core_iterators()
         bpf_map__reuse_fd(iterator_bpf->maps.per_core_stats_map, bpf_map__fd(bpf->maps.per_core_stats_map));
 
         iterator_bpf->rodata->target_cpu_idx = (uint32_t)cpu_idx;
+        iterator_bpf->rodata->verbose        = options.verbose;
 
         if (ebpf_probe_per_core_iterator_bpf::load(iterator_bpf) != 0)
         {
@@ -341,6 +343,7 @@ ebpf_probe__init_per_rapl_domain_iterators()
         bpf_map__reuse_fd(iterator_bpf->maps.per_rapl_domain_stats_map, bpf_map__fd(bpf->maps.per_rapl_domain_stats_map));
 
         iterator_bpf->rodata->target_rapl_domain_idx = (uint32_t)domain_idx;
+        iterator_bpf->rodata->verbose                = options.verbose;
 
         if (ebpf_probe_per_rapl_domain_iterator_bpf::load(iterator_bpf) != 0)
         {
@@ -382,12 +385,14 @@ ebpf_probe__init_per_rapl_domain_iterators()
 }
 
 error_t
-ebpf_probe::init()
+ebpf_probe::init(
+        const struct options& opt)
 {
     assert(bpf == nullptr);
     error_t err;
 
     num_cpus = libbpf_num_possible_cpus();
+    options = opt;
 
     if (getuid() != ROOT_PRIVILEGES)
     {

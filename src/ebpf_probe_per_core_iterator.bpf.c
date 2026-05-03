@@ -11,18 +11,18 @@
 #include <bpf_shared_maps.h>
 
 #define VERBOSE_OUTPUT \
-"%ld: {\n" \
+"# CORE\n" \
+"%ld:\n" \
 "    total_packets_received: %llu\n" \
 "    total_rx_bytes_received: %llu\n" \
 "    instructions: %ld\n" \
 "    cpu_cycles: %ld\n" \
 "    ref_cpu_cycles: %ld\n" \
-"    cache_misses: %ld\n" \
-"}\n"
+"    cache_misses: %ld\n"
 
 #define DEFAULT_OUTPUT "%llu,%ld,%ld,%ld,%ld\n"
 
-volatile const bool verbose = true;
+volatile const bool verbose;
 volatile const __u32 target_cpu_idx;
 
 SEC("iter/bpf_map_elem")
