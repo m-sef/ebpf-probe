@@ -69,7 +69,7 @@ enum rapl_domains {
     RAPL_UNCORE = 2,
     RAPL_DRAM   = 3,
     RAPL_PSYS   = 4,
-    RAPL_DOMAINS_MAX
+    RAPL_DOMAINS_MAX,
 };
 
 #endif
