@@ -20,6 +20,8 @@
 #define DEFAULT_OUTPUT "%llu\n"
 
 volatile const bool verbose;
+volatile const char scale[32];
+volatile const char unit[32];
 volatile const __u32 target_rapl_domain_idx;
 
 static const char rapl_domain_names[][8] = {
