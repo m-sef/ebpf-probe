@@ -68,7 +68,7 @@ SEC("perf_event")
  * @brief Attached to Software CPU Clock perf event, triggers every 1Hz
  * 
  */
-int perf_event_handler(struct bpf_perf_event_data* ctx)
+int timer(struct bpf_perf_event_data* ctx)
 {
     __u32 cpu_idx = bpf_get_smp_processor_id();
     __u32 key = 0;

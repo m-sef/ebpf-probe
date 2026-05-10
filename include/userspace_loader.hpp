@@ -16,15 +16,36 @@
 #include "ebpf_probe_per_rapl_domain_iterator.skel.h"
 #include "definitions.hpp"
 
-namespace ebpf_probe
+class UserspaceLoader
 {
-    error_t init(const struct options& opt);
-    error_t destroy();
+protected:
+public:
+    UserspaceLoader(const struct options& options);
+    ~UserspaceLoader();
+private:
+    void _create_sys_directories();
+    void _create_core_files();
+    void _create_rapl_files();
 
-    error_t attach_xdp(const std::string& interface_name);
+    void _remove_sys_directories();
+    void _remove_core_files();
+    void _remove_rapl_files();
 
-    size_t get_total_packets_received();
-    size_t get_total_rx_bytes_received();
-}
+    void _attach_xdp(const std::string& interface_name);
+    void _attach_timer(int sample_frequency);
+
+    void _init_perf_event_map();
+    void _init_rapl_map();
+
+    void _init_per_core_iterators();
+    void _init_per_rapl_domain_iterators();
+
+    struct options _options;
+    __u32 _cpu_count;
+
+    struct ebpf_probe_data_bpf*                      _data_bpf;
+    //struct ebpf_probe_per_core_iterator_bpf**        _per_core_iterator_bpfs; 
+    //struct ebpf_probe_per_rapl_domain_iterator_bpf** _per_rapl_domain_iterator_bpfs;
+};
 
 #endif

@@ -13,8 +13,7 @@
 
 #define ERROR(message, ...) \
     fprintf(stderr, "[ERROR] "); \
-    fprintf(stderr, message, ##__VA_ARGS__); \
-    perror("")
+    fprintf(stderr, message, ##__VA_ARGS__);
 
 typedef int fd_t;
 

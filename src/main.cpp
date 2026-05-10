@@ -90,10 +90,9 @@ parse_arguments(
 
 int main(int argc, char** argv)
 {
-    error_t err;
     parse_arguments(argc, argv);
 
-    err = ebpf_probe::init(options);
+    /* err = ebpf_probe::init(options);
     if (err != EXIT_SUCCESS)
     {
         ebpf_probe::destroy();
@@ -113,6 +112,15 @@ int main(int argc, char** argv)
         sleep(5);
 
     ebpf_probe::destroy();
+    puts(""); */
+
+    UserspaceLoader userspace_loader(options);
+
+    signal(SIGINT, handle_signal_interrupt);
+
+    while (running)
+        sleep(5);
+    
     puts("");
 
     return EXIT_SUCCESS;
