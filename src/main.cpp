@@ -8,12 +8,20 @@
 #include "definitions.hpp"
 #include "userspace_loader.hpp"
 
-const char short_options[] = "hi:v";
+const char short_options[] = "f:hi:v";
 
 const static struct option long_options[] = {
     {"help",      no_argument,       nullptr, 'h'},
     {"interface", required_argument, nullptr, 'i'},
+    {"frequency", required_argument, nullptr, 'f'},
     {"verbose",   no_argument,       nullptr, 'v'},
+};
+
+const static char* long_option_descriptions[] = {
+    "Display help message",
+    "Listen for network traffic on this interface",
+    "Frequency to sample perf and rapl events in Hz",
+    "Verbose output when reading pinned files",
 };
 
 static struct options options = {
@@ -35,7 +43,7 @@ static inline void
 put_usage(
         char* program_name)
 {
-    fprintf(stderr, "usage: %s -i interface [-h][-v]\n", program_name);
+    fprintf(stdout, "usage: %s -i INTERFACE [-s FREQUENCY] [-hv]\n", program_name);
 }
 
 static inline void
@@ -44,10 +52,13 @@ put_help(
 {
     put_usage(program_name);
 
-    fprintf(stderr, "\noptions:\n");
-    for (const struct option& opt : long_options)
+    fprintf(stdout, "\noptions:\n");
+    for (size_t i = 0; i < LENGTH_OF(long_options); i++)
     {
-        fprintf(stderr, "  -%c, --%-18s\n", (char)opt.val, opt.name);
+        fprintf(stdout, "  -%c, --%-18s %s\n",
+            (char)long_options[i].val,
+            long_options[i].name,
+            long_option_descriptions[i]);
     }
 }
 
@@ -65,10 +76,14 @@ parse_arguments(
         {
         case 'h':
             put_help(argv[0]);
-            exit(EXIT_FAILURE);
+            exit(EXIT_SUCCESS);
               
         case 'i':
             options.interface_name = optarg;
+            break;
+        
+        case 'f':
+            options.sample_frequency = atoi(optarg);
             break;
         
         case 'v':
@@ -91,28 +106,6 @@ parse_arguments(
 int main(int argc, char** argv)
 {
     parse_arguments(argc, argv);
-
-    /* err = ebpf_probe::init(options);
-    if (err != EXIT_SUCCESS)
-    {
-        ebpf_probe::destroy();
-        return err;
-    }
-
-    err = ebpf_probe::attach_xdp(options.interface_name);
-    if (err != EXIT_SUCCESS)
-    {
-        ebpf_probe::destroy();
-        return err;
-    }
-
-    signal(SIGINT, handle_signal_interrupt);
-
-    while (running)
-        sleep(5);
-
-    ebpf_probe::destroy();
-    puts(""); */
 
     UserspaceLoader userspace_loader(options);
 

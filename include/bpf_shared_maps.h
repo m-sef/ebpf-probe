@@ -39,7 +39,7 @@ struct {
 /* Domain */
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
-    __uint(max_entries, 5); /* 5 Expected sockets */
+    __uint(max_entries, 5);
     __type(key, __u32);
     __type(value, struct domain_stats);
 } per_rapl_domain_stats_map SEC(".maps");

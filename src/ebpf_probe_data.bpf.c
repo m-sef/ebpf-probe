@@ -90,25 +90,25 @@ int timer(struct bpf_perf_event_data* ctx)
     struct domain_stats* core_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
     if (!core_domain_stats_ptr)
         return 1;
-    core_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_PKG);
+    core_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_CORE);
     key++;
 
     struct domain_stats* uncore_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
     if (!uncore_domain_stats_ptr)
         return 1;
-    uncore_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_PKG);
+    uncore_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_UNCORE);
     key++;
 
     struct domain_stats* dram_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
     if (!dram_domain_stats_ptr)
         return 1;
-    dram_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_PKG);
+    dram_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_DRAM);
     key++;
 
     struct domain_stats* psys_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
     if (!psys_domain_stats_ptr)
         return 1;
-    psys_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_PKG);
+    psys_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_PSYS);
 
     return 0;
 }

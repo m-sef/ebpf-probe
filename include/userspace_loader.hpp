@@ -4,8 +4,8 @@
  * @brief 
  * 
  */
-#ifndef PROBE_H
-#define PROBE_H
+#ifndef USERSPACE_LOADER_H
+#define USERSPACE_LOADER_H
 
 #include <string>
 #include <vector>
@@ -18,15 +18,11 @@
 
 class UserspaceLoader
 {
-protected:
 public:
     UserspaceLoader(const struct options& options);
     ~UserspaceLoader();
 private:
     void _create_sys_directories();
-    void _create_core_files();
-    void _create_rapl_files();
-
     void _remove_sys_directories();
     void _remove_core_files();
     void _remove_rapl_files();
@@ -43,9 +39,13 @@ private:
     struct options _options;
     __u32 _cpu_count;
 
-    struct ebpf_probe_data_bpf*                      _data_bpf;
-    //struct ebpf_probe_per_core_iterator_bpf**        _per_core_iterator_bpfs; 
-    //struct ebpf_probe_per_rapl_domain_iterator_bpf** _per_rapl_domain_iterator_bpfs;
+    struct ebpf_probe_data_bpf* _data_bpf;
+    std::vector<struct ebpf_probe_per_core_iterator_bpf*>        _per_core_iterator_bpfs;
+    std::vector<struct ebpf_probe_per_rapl_domain_iterator_bpf*> _per_rapl_domain_iterator_bpfs;
+
+    std::vector<bpf_link*> _timer_links;
+    std::vector<bpf_link*> _per_core_iterator_links;
+    std::vector<bpf_link*> _per_rapl_domain_iterator_links;
 };
 
 #endif

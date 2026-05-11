@@ -15,8 +15,6 @@
     fprintf(stderr, "[ERROR] "); \
     fprintf(stderr, message, ##__VA_ARGS__);
 
-typedef int fd_t;
-
 typedef struct options {
     char* interface_name; /* Listen for packets on this network interface */
     int sample_frequency;

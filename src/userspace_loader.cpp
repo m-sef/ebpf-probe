@@ -23,6 +23,7 @@
 #include "ebpf_probe_data.skel.h"
 #include "ebpf_probe_per_core_iterator.skel.h"
 #include "ebpf_probe_per_rapl_domain_iterator.skel.h"
+#include "rapl_helpers.hpp"
 #include "userspace_loader.hpp"
 #include "definitions.hpp"
 #include "bpf_definitions.h"
@@ -33,7 +34,7 @@
 #define FOREACH_PERF_EVENT(i, n) for (size_t i = 0; i < n; i++)
 #define FOREACH_RAPL_DOMAIN(i, n) for (size_t i = 0; i < n; i++)
 
-/*static struct perf_event_attr perf_events[] = {
+static struct perf_event_attr perf_events[] = {
     [CPU_CYCLES]          = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CPU_CYCLES},
     [INSTRUCTIONS]        = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_INSTRUCTIONS},
     [CACHE_REFERENCES]    = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CACHE_REFERENCES},
@@ -53,7 +54,7 @@ static const char* perf_event_names[] = {
     [BRANCH_MISSES]       = "branch-misses",
     [BUS_CYCLES]          = "bus-cycles",
     [REF_CPU_CYCLES]      = "ref-cycles",
-}; */
+};
 
 static const char* rapl_domain_names[] = {
 	[RAPL_PKG]    = "pkg",
@@ -94,8 +95,6 @@ UserspaceLoader::UserspaceLoader(
     _attach_timer(_options.sample_frequency);
 
     _create_sys_directories();
-    _create_core_files();
-    _create_rapl_files();
 
     _init_perf_event_map();
     _init_rapl_map();
@@ -106,28 +105,59 @@ UserspaceLoader::UserspaceLoader(
 
 UserspaceLoader::~UserspaceLoader()
 {
+    for (bpf_link* link : _timer_links)
+        bpf_link__destroy(link);
+
+    for (bpf_link* link : _per_core_iterator_links)
+        bpf_link__destroy(link);
+    
+    for (bpf_link* link : _per_rapl_domain_iterator_links)
+        bpf_link__destroy(link);
+
     ebpf_probe_data_bpf::destroy(_data_bpf);
+    
+    for (auto& skeleton : _per_core_iterator_bpfs)
+        ebpf_probe_per_core_iterator_bpf::destroy(skeleton);
+    
+    for (auto& skeleton : _per_rapl_domain_iterator_bpfs)
+        ebpf_probe_per_rapl_domain_iterator_bpf::destroy(skeleton);
 
     _remove_core_files();
     _remove_rapl_files();
     _remove_sys_directories();
 }
 
+static inline void
+make_directory(const std::string& directory_path, mode_t mode)
+{
+    if (mkdir(directory_path.c_str(), mode) == -1)
+    {
+        switch (errno)
+        {
+        case EEXIST:
+            WARNING("Failed to make directory %s, already exists.\n", directory_path.c_str());
+            break;
+        
+        case EACCES:
+            ERROR("Failed to make directory %s, permission denied.\n", directory_path.c_str());
+            exit(EXIT_FAILURE);
+        
+        case ENOENT:
+            ERROR("Failed to make directory %s, parent directory does not exist.\n", directory_path.c_str());
+            exit(EXIT_FAILURE);
+        
+        default:
+            perror("mkdir failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
 void UserspaceLoader::_create_sys_directories()
 {
-    mkdir("/sys/fs/bpf/ebpf_probe", 0x700);
-    mkdir("/sys/fs/bpf/ebpf_probe/core", 0x700);
-    mkdir("/sys/fs/bpf/ebpf_probe/rapl", 0x700);
-}
-
-void UserspaceLoader::_create_core_files()
-{
-
-}
-
-void UserspaceLoader::_create_rapl_files()
-{
-
+    make_directory("/sys/fs/bpf/ebpf_probe",      0x700);
+    make_directory("/sys/fs/bpf/ebpf_probe/core", 0x700);
+    make_directory("/sys/fs/bpf/ebpf_probe/rapl", 0x700);
 }
 
 void UserspaceLoader::_remove_sys_directories()
@@ -183,7 +213,7 @@ void UserspaceLoader::_attach_timer(int sample_frequency)
         timer.type        = PERF_TYPE_SOFTWARE;
         timer.config      = PERF_COUNT_SW_CPU_CLOCK;
         timer.sample_freq = sample_frequency;
-        timer.freq        = sample_frequency;
+        timer.freq        = 1;
         
         fd_t timer_fd = syscall(SYS_perf_event_open, &timer, -1, cpu_idx, -1, 0);
         if (timer_fd < 0)
@@ -200,26 +230,174 @@ void UserspaceLoader::_attach_timer(int sample_frequency)
             exit(EXIT_FAILURE);
         }
 
+        _timer_links.push_back(link);
         close(timer_fd);
     }
 }
 
 void UserspaceLoader::_init_perf_event_map()
 {
+    fd_t perf_event_map_fd = bpf_map__fd(_data_bpf->maps.perf_event_map);
 
+    /* Add the file descriptors for each perf_event to the BPF program's perf_event_map */
+    FOREACH_PERF_EVENT(perf_event_idx, NUM_EVENT_TYPES)
+    {
+        FOREACH_CORE(cpu_idx, _cpu_count)
+        {
+            fd_t perf_event_fd = syscall(
+                SYS_perf_event_open, &perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
+            if (perf_event_fd < 0)
+            {
+                WARNING("Failed to get file descriptor for perf event '%s' on core %ld, likely not available on this system\n",
+                    perf_event_names[perf_event_idx], cpu_idx);
+                continue;
+            }
+            
+            __u32 key = (cpu_idx * NUM_EVENT_TYPES) + perf_event_idx;
+            bpf_map_update_elem(perf_event_map_fd, &key, &perf_event_fd, BPF_ANY);
+
+            close(perf_event_fd);
+        }
+    }
 }
 
 void UserspaceLoader::_init_rapl_map()
 {
+    fd_t rapl_map_fd = bpf_map__fd(_data_bpf->maps.rapl_map);
 
+    FOREACH_RAPL_DOMAIN(domain_idx, RAPL_DOMAINS_MAX)
+    {
+        struct perf_event_attr rapl_event = {};
+        rapl_event.type = read_rapl_type();
+        rapl_event.size = sizeof(struct perf_event_attr);
+        rapl_event.config = read_rapl_config(rapl_domain_names[domain_idx]);
+
+        fd_t rapl_event_fd = syscall(
+            SYS_perf_event_open, &rapl_event, -1, 0, -1, 0);
+        if (rapl_event_fd < 0)
+        {
+            WARNING("Failed to get file descriptor for rapl domain '%s', likely not available on this system\n",
+                rapl_domain_names[domain_idx]);
+            continue;
+        }
+
+        __u32 key = domain_idx;
+        bpf_map_update_elem(rapl_map_fd, &key, &rapl_event_fd, BPF_ANY);
+
+        close(rapl_event_fd);
+    }
 }
 
 void UserspaceLoader::_init_per_core_iterators()
 {
+    _per_core_iterator_bpfs = std::vector<struct ebpf_probe_per_core_iterator_bpf*>(_cpu_count);
 
+    FOREACH_CORE(cpu_idx, _cpu_count)
+    {
+        _per_core_iterator_bpfs[cpu_idx] = ebpf_probe_per_core_iterator_bpf::open();
+        struct ebpf_probe_per_core_iterator_bpf* iterator_bpf = _per_core_iterator_bpfs[cpu_idx];
+
+        if (iterator_bpf == nullptr)
+        {
+            ERROR("Failed to open iterator BPF object for core %ld\n", cpu_idx);
+            exit(EXIT_FAILURE);
+        }
+
+        bpf_map__reuse_fd(iterator_bpf->maps.perf_event_map,     bpf_map__fd(_data_bpf->maps.perf_event_map));
+        bpf_map__reuse_fd(iterator_bpf->maps.rapl_map,           bpf_map__fd(_data_bpf->maps.rapl_map));
+        bpf_map__reuse_fd(iterator_bpf->maps.per_core_stats_map, bpf_map__fd(_data_bpf->maps.per_core_stats_map));
+
+        iterator_bpf->rodata->target_cpu_idx = (uint32_t)cpu_idx;
+        iterator_bpf->rodata->verbose        = _options.verbose;
+
+        if (ebpf_probe_per_core_iterator_bpf::load(iterator_bpf) != 0)
+        {
+            ERROR("Failed to load iterator BPF object for core %ld\n", cpu_idx);
+            exit(EXIT_FAILURE);
+        }
+
+        union bpf_iter_link_info linfo = {};
+        linfo.map.map_fd = (uint32_t)bpf_map__fd(_data_bpf->maps.per_core_stats_map);
+
+        LIBBPF_OPTS(bpf_iter_attach_opts, attach_opts,
+            .link_info     = &linfo,
+            .link_info_len = sizeof(linfo),
+        );
+
+        struct bpf_link* link = bpf_program__attach_iter(
+            iterator_bpf->progs.dump_counters, &attach_opts);
+        if (link == nullptr)
+        {
+            ERROR("Failed to attach iterator for core %ld\n", cpu_idx);
+            exit(EXIT_FAILURE);
+        }
+
+        char file_path[64];
+        snprintf(file_path, sizeof(file_path), "/sys/fs/bpf/ebpf_probe/core/%ld", cpu_idx);
+
+        if (bpf_link__pin(link, file_path) != 0)
+        {
+            ERROR("Failed to pin iterator link for core %ld\n", cpu_idx);
+            bpf_link__destroy(link);
+            exit(EXIT_FAILURE);
+        }
+
+        _per_core_iterator_links.push_back(link);
+    }
 }
 
 void UserspaceLoader::_init_per_rapl_domain_iterators()
 {
+    _per_rapl_domain_iterator_bpfs = std::vector<struct ebpf_probe_per_rapl_domain_iterator_bpf*>(RAPL_DOMAINS_MAX);
 
+    FOREACH_RAPL_DOMAIN(domain_idx, RAPL_DOMAINS_MAX)
+    {
+        _per_rapl_domain_iterator_bpfs[domain_idx] = ebpf_probe_per_rapl_domain_iterator_bpf::open();
+        struct ebpf_probe_per_rapl_domain_iterator_bpf* iterator_bpf = _per_rapl_domain_iterator_bpfs[domain_idx];
+
+        if (iterator_bpf == nullptr)
+        {
+            ERROR("Failed to open iterator BPF object for domain %ld\n", domain_idx);
+            exit(EXIT_FAILURE);
+        }
+
+        bpf_map__reuse_fd(iterator_bpf->maps.per_rapl_domain_stats_map, bpf_map__fd(_data_bpf->maps.per_rapl_domain_stats_map));
+
+        iterator_bpf->rodata->target_rapl_domain_idx = (uint32_t)domain_idx;
+        iterator_bpf->rodata->verbose                = _options.verbose;
+
+        if (ebpf_probe_per_rapl_domain_iterator_bpf::load(iterator_bpf) != 0)
+        {
+            ERROR("Failed to load iterator BPF object for domain %ld\n", domain_idx);
+            exit(EXIT_FAILURE);
+        }
+
+        union bpf_iter_link_info linfo = {};
+        linfo.map.map_fd = (uint32_t)bpf_map__fd(_data_bpf->maps.per_rapl_domain_stats_map);
+
+        LIBBPF_OPTS(bpf_iter_attach_opts, attach_opts,
+            .link_info     = &linfo,
+            .link_info_len = sizeof(linfo),
+        );
+
+        struct bpf_link* link = bpf_program__attach_iter(
+            iterator_bpf->progs.dump_counters, &attach_opts);
+        if (link == nullptr)
+        {
+            ERROR("Failed to attach iterator for domain %ld\n", domain_idx);
+            exit(EXIT_FAILURE);
+        }
+
+        char file_path[64];
+        snprintf(file_path, sizeof(file_path), "/sys/fs/bpf/ebpf_probe/rapl/%s", rapl_domain_names[domain_idx]);
+
+        if (bpf_link__pin(link, file_path) != 0)
+        {
+            ERROR("Failed to pin iterator link for domain %ld\n", domain_idx);
+            bpf_link__destroy(link);
+            exit(EXIT_FAILURE);
+        }
+
+        _per_rapl_domain_iterator_links.push_back(link);
+    }
 }
