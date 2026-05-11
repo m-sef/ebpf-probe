@@ -4,10 +4,8 @@ An XDP-based packet counter with per-CPU hardware performance counter and energy
 
 ## Requirements
 
-- Linux kernel with BTF enabled (`/sys/kernel/btf/vmlinux` must exist)
-- `/sys/fs/bpf` mounted
 - Root privileges
-- `clang`, `cmake` ≥ 3.28, `libbpf-dev`, `bpftool`
+- `clang`, `cmake`, `libbpf-dev`, `bpftool`
 
 ## Setup
 

@@ -1,7 +1,6 @@
 /**
  * @file userspace_loader.cpp
  * @author Seth Moore (slmoore@hamilton.edu)
- * @brief 
  * 
  */
 #include <linux/perf_event.h>

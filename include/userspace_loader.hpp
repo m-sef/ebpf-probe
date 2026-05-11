@@ -1,7 +1,6 @@
 /**
  * @file userspace_loader.hpp
  * @author Seth Moore (slmoore@hamilton.edu)
- * @brief 
  * 
  */
 #ifndef USERSPACE_LOADER_H
