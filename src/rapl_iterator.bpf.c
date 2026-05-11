@@ -11,11 +11,8 @@
 #include <bpf_shared_maps.h>
 
 #define VERBOSE_OUTPUT \
-"# RAPL Domain\n" \
 "%s:\n" \
-"    value: %llu\n" \
-"    scale: %s\n" \
-"    unit: %s\n"
+"    value: %llu\n"
 
 #define DEFAULT_OUTPUT "%llu\n"
 

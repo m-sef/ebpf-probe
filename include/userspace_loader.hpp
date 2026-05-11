@@ -11,9 +11,9 @@
 #include <vector>
 #include <memory>
 
-#include "ebpf_probe_data.skel.h"
-#include "ebpf_probe_per_core_iterator.skel.h"
-#include "ebpf_probe_per_rapl_domain_iterator.skel.h"
+#include "data.skel.h"
+#include "core_iterator.skel.h"
+#include "rapl_iterator.skel.h"
 #include "definitions.hpp"
 
 class UserspaceLoader
@@ -21,6 +21,11 @@ class UserspaceLoader
 public:
     UserspaceLoader(const struct options& options);
     ~UserspaceLoader();
+
+    UserspaceLoader(const UserspaceLoader& other) = delete;
+    UserspaceLoader& operator=(const UserspaceLoader& other) = delete;
+    UserspaceLoader(UserspaceLoader&& other) = delete;
+    UserspaceLoader& operator=(UserspaceLoader&& other) = delete;
 private:
     void _create_sys_directories();
     void _remove_sys_directories();
@@ -36,16 +41,16 @@ private:
     void _init_per_core_iterators();
     void _init_per_rapl_domain_iterators();
 
-    struct options _options;
-    __u32 _cpu_count;
+    const struct options _options;
+    const __u32 _cpu_count;
 
-    struct ebpf_probe_data_bpf* _data_bpf;
-    std::vector<struct ebpf_probe_per_core_iterator_bpf*>        _per_core_iterator_bpfs;
-    std::vector<struct ebpf_probe_per_rapl_domain_iterator_bpf*> _per_rapl_domain_iterator_bpfs;
+    struct data_bpf* _data_bpf;
+    std::vector<struct core_iterator_bpf*> _core_iterator_bpfs;
+    std::vector<struct rapl_iterator_bpf*> _rapl_iterator_bpfs;
 
     std::vector<bpf_link*> _timer_links;
-    std::vector<bpf_link*> _per_core_iterator_links;
-    std::vector<bpf_link*> _per_rapl_domain_iterator_links;
+    std::vector<bpf_link*> _core_iterator_links;
+    std::vector<bpf_link*> _rapl_iterator_links;
 };
 
 #endif

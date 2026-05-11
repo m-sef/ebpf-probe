@@ -20,13 +20,13 @@
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
 
-#include "ebpf_probe_data.skel.h"
-#include "ebpf_probe_per_core_iterator.skel.h"
-#include "ebpf_probe_per_rapl_domain_iterator.skel.h"
+#include "data.skel.h"
+#include "core_iterator.skel.h"
+#include "rapl_iterator.skel.h"
 #include "rapl_helpers.hpp"
-#include "userspace_loader.hpp"
 #include "definitions.hpp"
 #include "bpf_definitions.h"
+#include "userspace_loader.hpp"
 
 #define ROOT_PRIVILEGES 0
 
@@ -66,17 +66,16 @@ static const char* rapl_domain_names[] = {
 
 UserspaceLoader::UserspaceLoader(
         const struct options& options)
+    : _options(options)
+    , _cpu_count(libbpf_num_possible_cpus())
 {
-    _options   = options;
-    _cpu_count = libbpf_num_possible_cpus();
-
     if (getuid() != ROOT_PRIVILEGES)
     {
         ERROR("Program must be run with root privileges\n");
         exit(EXIT_FAILURE);
     }
 
-    _data_bpf = ebpf_probe_data_bpf::open();
+    _data_bpf = data_bpf::open();
     if (_data_bpf == nullptr)
     {
         ERROR("Failed to open BPF object\n");
@@ -85,7 +84,7 @@ UserspaceLoader::UserspaceLoader(
 
     bpf_map__set_max_entries(_data_bpf->maps.perf_event_map, _cpu_count * NUM_EVENT_TYPES);
 
-    if (ebpf_probe_data_bpf::load(_data_bpf) != 0)
+    if (data_bpf::load(_data_bpf) != 0)
     {
         ERROR("Failed to load BPF object\n");
         exit(EXIT_FAILURE);
@@ -108,19 +107,19 @@ UserspaceLoader::~UserspaceLoader()
     for (bpf_link* link : _timer_links)
         bpf_link__destroy(link);
 
-    for (bpf_link* link : _per_core_iterator_links)
+    for (bpf_link* link : _core_iterator_links)
         bpf_link__destroy(link);
     
-    for (bpf_link* link : _per_rapl_domain_iterator_links)
+    for (bpf_link* link : _rapl_iterator_links)
         bpf_link__destroy(link);
 
-    ebpf_probe_data_bpf::destroy(_data_bpf);
+    data_bpf::destroy(_data_bpf);
     
-    for (auto& skeleton : _per_core_iterator_bpfs)
-        ebpf_probe_per_core_iterator_bpf::destroy(skeleton);
+    for (auto& skeleton : _core_iterator_bpfs)
+        core_iterator_bpf::destroy(skeleton);
     
-    for (auto& skeleton : _per_rapl_domain_iterator_bpfs)
-        ebpf_probe_per_rapl_domain_iterator_bpf::destroy(skeleton);
+    for (auto& skeleton : _rapl_iterator_bpfs)
+        rapl_iterator_bpf::destroy(skeleton);
 
     _remove_core_files();
     _remove_rapl_files();
@@ -304,12 +303,12 @@ void UserspaceLoader::_init_rapl_map()
 
 void UserspaceLoader::_init_per_core_iterators()
 {
-    _per_core_iterator_bpfs = std::vector<struct ebpf_probe_per_core_iterator_bpf*>(_cpu_count);
+    _core_iterator_bpfs = std::vector<struct core_iterator_bpf*>(_cpu_count);
 
     FOREACH_CORE(cpu_idx, _cpu_count)
     {
-        _per_core_iterator_bpfs[cpu_idx] = ebpf_probe_per_core_iterator_bpf::open();
-        struct ebpf_probe_per_core_iterator_bpf* iterator_bpf = _per_core_iterator_bpfs[cpu_idx];
+        _core_iterator_bpfs[cpu_idx] = core_iterator_bpf::open();
+        struct core_iterator_bpf* iterator_bpf = _core_iterator_bpfs[cpu_idx];
 
         if (iterator_bpf == nullptr)
         {
@@ -324,7 +323,7 @@ void UserspaceLoader::_init_per_core_iterators()
         iterator_bpf->rodata->target_cpu_idx = (uint32_t)cpu_idx;
         iterator_bpf->rodata->verbose        = _options.verbose;
 
-        if (ebpf_probe_per_core_iterator_bpf::load(iterator_bpf) != 0)
+        if (core_iterator_bpf::load(iterator_bpf) != 0)
         {
             ERROR("Failed to load iterator BPF object for core %ld\n", cpu_idx);
             exit(EXIT_FAILURE);
@@ -356,18 +355,18 @@ void UserspaceLoader::_init_per_core_iterators()
             exit(EXIT_FAILURE);
         }
 
-        _per_core_iterator_links.push_back(link);
+        _core_iterator_links.push_back(link);
     }
 }
 
 void UserspaceLoader::_init_per_rapl_domain_iterators()
 {
-    _per_rapl_domain_iterator_bpfs = std::vector<struct ebpf_probe_per_rapl_domain_iterator_bpf*>(RAPL_DOMAINS_MAX);
+    _rapl_iterator_bpfs = std::vector<struct rapl_iterator_bpf*>(RAPL_DOMAINS_MAX);
 
     FOREACH_RAPL_DOMAIN(domain_idx, RAPL_DOMAINS_MAX)
     {
-        _per_rapl_domain_iterator_bpfs[domain_idx] = ebpf_probe_per_rapl_domain_iterator_bpf::open();
-        struct ebpf_probe_per_rapl_domain_iterator_bpf* iterator_bpf = _per_rapl_domain_iterator_bpfs[domain_idx];
+        _rapl_iterator_bpfs[domain_idx] = rapl_iterator_bpf::open();
+        struct rapl_iterator_bpf* iterator_bpf = _rapl_iterator_bpfs[domain_idx];
 
         if (iterator_bpf == nullptr)
         {
@@ -380,7 +379,7 @@ void UserspaceLoader::_init_per_rapl_domain_iterators()
         iterator_bpf->rodata->target_rapl_domain_idx = (uint32_t)domain_idx;
         iterator_bpf->rodata->verbose                = _options.verbose;
 
-        if (ebpf_probe_per_rapl_domain_iterator_bpf::load(iterator_bpf) != 0)
+        if (rapl_iterator_bpf::load(iterator_bpf) != 0)
         {
             ERROR("Failed to load iterator BPF object for domain %ld\n", domain_idx);
             exit(EXIT_FAILURE);
@@ -412,6 +411,6 @@ void UserspaceLoader::_init_per_rapl_domain_iterators()
             exit(EXIT_FAILURE);
         }
 
-        _per_rapl_domain_iterator_links.push_back(link);
+        _rapl_iterator_links.push_back(link);
     }
 }

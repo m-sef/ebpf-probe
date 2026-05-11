@@ -11,7 +11,6 @@
 #include <bpf_shared_maps.h>
 
 #define VERBOSE_OUTPUT \
-"# CORE\n" \
 "%ld:\n" \
 "    total_packets_received: %llu\n" \
 "    total_rx_bytes_received: %llu\n" \
