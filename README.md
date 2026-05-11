@@ -29,11 +29,11 @@ sudo ./build/ebpf_probe -i INTERFACE [-f FREQUENCY] [-hv]
 ```
 
 | Option | Long Option | Description |
-|------|-----------|-------------|
+|--------|-------------|-------------|
+| `-h` | `--help` | Show help |
 | `-i INTERFACE` | `--interface` | Network interface to attach to (e.g. `eth0`, `ens3`) |
 | `-f FREQUENCY` | `--frequency` | Sampling frequency for perf/RAPL events in Hz (default: 1) |
 | `-v` | `--verbose` | Verbose output when reading pinned files |
-| `-h` | `--help` | Show help |
 
 ## Reading Core Metrics
 
