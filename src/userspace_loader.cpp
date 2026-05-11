@@ -267,16 +267,24 @@ void UserspaceLoader::_init_rapl_map()
 
     FOREACH_RAPL_DOMAIN(domain_idx, RAPL_DOMAINS_MAX)
     {
+        int rapl_config = read_rapl_config(rapl_domain_names[domain_idx]);
+        if (rapl_config < 0)
+        {
+            WARNING("RAPL domain '%s' not found on this system\n",
+                rapl_domain_names[domain_idx]);
+            continue;
+        }
+
         struct perf_event_attr rapl_event = {};
-        rapl_event.type = read_rapl_type();
-        rapl_event.size = sizeof(struct perf_event_attr);
-        rapl_event.config = read_rapl_config(rapl_domain_names[domain_idx]);
+        rapl_event.type   = read_rapl_type();
+        rapl_event.size   = sizeof(struct perf_event_attr);
+        rapl_event.config = rapl_config;
 
         fd_t rapl_event_fd = syscall(
             SYS_perf_event_open, &rapl_event, -1, 0, -1, 0);
         if (rapl_event_fd < 0)
         {
-            WARNING("Failed to get file descriptor for rapl domain '%s', likely not available on this system\n",
+            WARNING("Failed to get file descriptor for RAPL domain '%s', likely not available on this system\n",
                 rapl_domain_names[domain_idx]);
             continue;
         }

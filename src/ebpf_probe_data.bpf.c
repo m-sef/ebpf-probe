@@ -81,30 +81,37 @@ int timer(struct bpf_perf_event_data* ctx)
     core_stats_ptr->ref_cpu_cycles = read_perf_event_counter(REF_CPU_CYCLES, cpu_idx);
     core_stats_ptr->cache_misses   = read_perf_event_counter(CACHE_MISSES,   cpu_idx);
 
+    /* RAPL events are opened on CPU 0. bpf_perf_event_read_value uses
+     * perf_event_read_local, so reads from any other CPU return 0 and
+     * would overwrite the correct value in the shared stats map. */
+    if (cpu_idx != 0)
+        return 0;
+    
+    key = RAPL_PKG;
     struct domain_stats* pkg_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
     if (!pkg_domain_stats_ptr)
         return 1;
     pkg_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_PKG);
-    key++;
-    
+
+    key = RAPL_CORE;
     struct domain_stats* core_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
     if (!core_domain_stats_ptr)
         return 1;
     core_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_CORE);
-    key++;
 
+    key = RAPL_UNCORE;
     struct domain_stats* uncore_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
     if (!uncore_domain_stats_ptr)
         return 1;
     uncore_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_UNCORE);
-    key++;
 
+    key = RAPL_DRAM;
     struct domain_stats* dram_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
     if (!dram_domain_stats_ptr)
         return 1;
     dram_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_DRAM);
-    key++;
 
+    key = RAPL_PSYS;
     struct domain_stats* psys_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
     if (!psys_domain_stats_ptr)
         return 1;
