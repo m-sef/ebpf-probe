@@ -16,7 +16,8 @@ An XDP-based packet counter with per-CPU hardware performance counter and energy
 sudo ./scripts/install_dependencies.sh
 
 # Build
-mkdir -p build && cd build
+mkdir build
+cd build
 cmake ..
 make
 ```
