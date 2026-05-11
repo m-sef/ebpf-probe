@@ -41,14 +41,6 @@ typedef struct domain_stats {
     __u64 value;
 } domain_stats_t;
 
-typedef struct rapl_stats {
-    __u64 core;
-    __u64 uncore;
-    __u64 dram;
-    __u64 pkg;
-    __u64 psys;
-} rapl_stats_t;
-
 typedef int fd_t;
 
 enum perf_event_map_ids {

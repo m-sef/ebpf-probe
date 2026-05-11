@@ -37,7 +37,7 @@ add_custom_command(
         -I${CMAKE_SOURCE_DIR}/include
         -c ${BPF_DATA_SOURCE}
         -o ${BPF_DATA_OBJECT}
-    DEPENDS ${BPF_DATA_SOURCE}
+    DEPENDS ${BPF_DATA_SOURCE} ${VMLINUX_HEADER}
 )
 
 add_custom_command(
@@ -48,7 +48,7 @@ add_custom_command(
         -I${CMAKE_SOURCE_DIR}/include
         -c ${BPF_CORE_ITER_SOURCE}
         -o ${BPF_CORE_ITER_OBJECT}
-    DEPENDS ${BPF_CORE_ITER_SOURCE}
+    DEPENDS ${BPF_CORE_ITER_SOURCE} ${VMLINUX_HEADER}
 )
 
 add_custom_command(
@@ -59,7 +59,7 @@ add_custom_command(
         -I${CMAKE_SOURCE_DIR}/include
         -c ${BPF_RAPL_ITER_SOURCE}
         -o ${BPF_RAPL_ITER_OBJECT}
-    DEPENDS ${BPF_RAPL_ITER_SOURCE}
+    DEPENDS ${BPF_RAPL_ITER_SOURCE} ${VMLINUX_HEADER}
 )
 
 add_custom_target(bpf_data_object ALL DEPENDS ${VMLINUX_HEADER} ${BPF_DATA_OBJECT})

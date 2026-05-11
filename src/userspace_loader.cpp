@@ -264,6 +264,12 @@ void UserspaceLoader::_init_perf_event_map()
 void UserspaceLoader::_init_rapl_map()
 {
     fd_t rapl_map_fd = bpf_map__fd(_data_bpf->maps.rapl_map);
+    int rapl_type = read_rapl_type();
+    if (rapl_type < 0)
+    {
+        ERROR("RAPL is not available on this system\n");
+        exit(EXIT_FAILURE);
+    }
 
     FOREACH_RAPL_DOMAIN(domain_idx, RAPL_DOMAINS_MAX)
     {
@@ -276,7 +282,7 @@ void UserspaceLoader::_init_rapl_map()
         }
 
         struct perf_event_attr rapl_event = {};
-        rapl_event.type   = read_rapl_type();
+        rapl_event.type   = rapl_type;
         rapl_event.size   = sizeof(struct perf_event_attr);
         rapl_event.config = rapl_config;
 

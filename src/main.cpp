@@ -43,7 +43,7 @@ static inline void
 put_usage(
         char* program_name)
 {
-    fprintf(stdout, "usage: %s -i INTERFACE [-s FREQUENCY] [-hv]\n", program_name);
+    fprintf(stdout, "usage: %s -i INTERFACE [-f FREQUENCY] [-hv]\n", program_name);
 }
 
 static inline void
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
     signal(SIGINT, handle_signal_interrupt);
 
     while (running)
-        sleep(5);
+        pause();
     
     puts("");
 
