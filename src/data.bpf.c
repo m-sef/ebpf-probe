@@ -1,7 +1,6 @@
 /**
- * @file ebpf_probe_data.bpf.c
+ * @file data.bpf.c
  * @author Seth Moore (slmoore@hamilton.edu)
- * @brief eBPF program which uses the XDP hook to gather basic information about received packets
  * 
  */
 #include "vmlinux.h"
@@ -17,7 +16,7 @@ increment_core_stats_network_counters(
         __u64 rx_bytes)
 {
     __u32 key = 0;
-    struct core_stats* ptr = bpf_map_lookup_elem(&per_core_stats_map, &key);
+    struct core_stats* ptr = bpf_map_lookup_elem(&core_stats_map, &key);
     if (ptr)
     {
         ptr->total_packets_received  += packets;
@@ -57,7 +56,7 @@ read_rapl_domain_event_counter(
     __u32 key = rapl_domain_idx;
     struct bpf_perf_event_value value = {};
 
-    if (bpf_perf_event_read_value(&rapl_map, key, &value, sizeof(value)) < 0)
+    if (bpf_perf_event_read_value(&rapl_event_map, key, &value, sizeof(value)) < 0)
         return 0;
 
     return value.counter;
@@ -72,7 +71,7 @@ int timer(struct bpf_perf_event_data* ctx)
 {
     __u32 cpu_idx = bpf_get_smp_processor_id();
     __u32 key = 0;
-    struct core_stats* core_stats_ptr = bpf_map_lookup_elem(&per_core_stats_map, &key);
+    struct core_stats* core_stats_ptr = bpf_map_lookup_elem(&core_stats_map, &key);
     if (!core_stats_ptr)
         return 1;
     
@@ -88,31 +87,31 @@ int timer(struct bpf_perf_event_data* ctx)
         return 0;
     
     key = RAPL_PKG;
-    struct domain_stats* pkg_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
+    struct domain_stats* pkg_domain_stats_ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
     if (!pkg_domain_stats_ptr)
         return 1;
     pkg_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_PKG);
 
     key = RAPL_CORE;
-    struct domain_stats* core_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
+    struct domain_stats* core_domain_stats_ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
     if (!core_domain_stats_ptr)
         return 1;
     core_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_CORE);
 
     key = RAPL_UNCORE;
-    struct domain_stats* uncore_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
+    struct domain_stats* uncore_domain_stats_ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
     if (!uncore_domain_stats_ptr)
         return 1;
     uncore_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_UNCORE);
 
     key = RAPL_DRAM;
-    struct domain_stats* dram_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
+    struct domain_stats* dram_domain_stats_ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
     if (!dram_domain_stats_ptr)
         return 1;
     dram_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_DRAM);
 
     key = RAPL_PSYS;
-    struct domain_stats* psys_domain_stats_ptr = bpf_map_lookup_elem(&per_rapl_domain_stats_map, &key);
+    struct domain_stats* psys_domain_stats_ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
     if (!psys_domain_stats_ptr)
         return 1;
     psys_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_PSYS);

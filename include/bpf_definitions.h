@@ -1,7 +1,6 @@
 /**
- * @file kernel_definitions.h
+ * @file bpf_definitions.h
  * @author Seth Moore (slmoore@hamilton.edu)
- * @brief 
  * 
  */
 #ifndef BPF_DEFINITIONS_H
@@ -11,19 +10,6 @@
 #include "vmlinux.h"
 #else
 #include <linux/types.h>
-#endif
-
-#ifdef UNUSED
-struct packet_information {
-    __u64 time; /* Time, in nanoseconds, when the packet was received */
-    __u64 size; /* The size of the entire packet, in bytes, including all headers */
-    __u32 rx_queue_index; /* The index of the NIC queue where the packet was received*/
-    __u32 source_address;
-    __u32 destination_address;
-    __u16 source_port;
-    __u16 destination_port;
-    __u8 protocol;
-};
 #endif
 
 typedef struct core_stats {

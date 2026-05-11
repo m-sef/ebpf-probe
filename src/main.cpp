@@ -1,3 +1,8 @@
+/**
+ * @file main.cpp
+ * @author Seth Moore (slmoore@hamilton.edu)
+ * 
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -15,6 +20,7 @@ const static struct option long_options[] = {
     {"interface", required_argument, nullptr, 'i'},
     {"frequency", required_argument, nullptr, 'f'},
     {"verbose",   no_argument,       nullptr, 'v'},
+    {0, 0, 0, 0},
 };
 
 const static char* long_option_descriptions[] = {
@@ -53,7 +59,7 @@ put_help(
     put_usage(program_name);
 
     fprintf(stdout, "\noptions:\n");
-    for (size_t i = 0; i < LENGTH_OF(long_options); i++)
+    for (size_t i = 0; i < LENGTH_OF(long_options) - 1; i++)
     {
         fprintf(stdout, "  -%c, --%-18s %s\n",
             (char)long_options[i].val,
@@ -108,6 +114,7 @@ int main(int argc, char** argv)
     parse_arguments(argc, argv);
 
     UserspaceLoader userspace_loader(options);
+    userspace_loader.init();
 
     signal(SIGINT, handle_signal_interrupt);
 

@@ -1,7 +1,6 @@
 /**
- * @file ebpf_probe_core_iter.bpf.c
+ * @file core_iterator.bpf.c
  * @author Seth Moore (slmoore@hamilton.edu)
- * @brief 
  * 
  */
 #include <vmlinux.h>
@@ -33,7 +32,7 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
         return 0;
     
     __u32 key = 0;
-    struct core_stats* ptr = bpf_map_lookup_percpu_elem(&per_core_stats_map, &key, target_cpu_idx);
+    struct core_stats* ptr = bpf_map_lookup_percpu_elem(&core_stats_map, &key, target_cpu_idx);
     if (!ptr)
         return 0;
     

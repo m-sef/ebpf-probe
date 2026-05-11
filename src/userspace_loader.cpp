@@ -69,37 +69,7 @@ UserspaceLoader::UserspaceLoader(
     : _options(options)
     , _cpu_count(libbpf_num_possible_cpus())
 {
-    if (getuid() != ROOT_PRIVILEGES)
-    {
-        ERROR("Program must be run with root privileges\n");
-        exit(EXIT_FAILURE);
-    }
-
-    _data_bpf = data_bpf::open();
-    if (_data_bpf == nullptr)
-    {
-        ERROR("Failed to open BPF object\n");
-        exit(EXIT_FAILURE);
-    }
-
-    bpf_map__set_max_entries(_data_bpf->maps.perf_event_map, _cpu_count * NUM_EVENT_TYPES);
-
-    if (data_bpf::load(_data_bpf) != 0)
-    {
-        ERROR("Failed to load BPF object\n");
-        exit(EXIT_FAILURE);
-    }
-
-    _attach_xdp(_options.interface_name);
-    _attach_timer(_options.sample_frequency);
-
-    _create_sys_directories();
-
-    _init_perf_event_map();
-    _init_rapl_map();
-
-    _init_per_core_iterators();
-    _init_per_rapl_domain_iterators();
+    
 }
 
 UserspaceLoader::~UserspaceLoader()
@@ -126,8 +96,45 @@ UserspaceLoader::~UserspaceLoader()
     _remove_sys_directories();
 }
 
+void UserspaceLoader::init()
+{
+    if (getuid() != ROOT_PRIVILEGES)
+    {
+        ERROR("Program must be run with root privileges\n");
+        exit(EXIT_FAILURE);
+    }
+
+    _data_bpf = data_bpf::open();
+    if (_data_bpf == nullptr)
+    {
+        ERROR("Failed to open BPF object\n");
+        exit(EXIT_FAILURE);
+    }
+
+    bpf_map__set_max_entries(_data_bpf->maps.perf_event_map, _cpu_count * NUM_EVENT_TYPES);
+
+    if (data_bpf::load(_data_bpf) != 0)
+    {
+        ERROR("Failed to load BPF object\n");
+        exit(EXIT_FAILURE);
+    }
+
+    _create_sys_directories();
+
+    _init_perf_event_map();
+    _init_rapl_event_map();
+
+    _init_core_iterators();
+    _init_rapl_iterators();
+
+    _attach_xdp(_options.interface_name);
+    _attach_timer(_options.sample_frequency);
+}
+
 static inline void
-make_directory(const std::string& directory_path, mode_t mode)
+make_directory(
+        const std::string& directory_path, 
+        mode_t mode)
 {
     if (mkdir(directory_path.c_str(), mode) == -1)
     {
@@ -203,6 +210,18 @@ void UserspaceLoader::_attach_xdp(const std::string& interface_name)
     }
 }
 
+static inline long
+perf_event_open(
+    struct perf_event_attr* hw_event, pid_t pid,
+    int cpu, int group_fd, unsigned long flags)
+{
+    int ret;
+
+    ret = syscall(SYS_perf_event_open, hw_event, pid, cpu, group_fd, flags);
+
+    return ret;
+}
+
 void UserspaceLoader::_attach_timer(int sample_frequency)
 {
     /* Attaches the Software CPU Clock perf event to the bpf program 'perf_event_handler' */
@@ -214,7 +233,7 @@ void UserspaceLoader::_attach_timer(int sample_frequency)
         timer.sample_freq = sample_frequency;
         timer.freq        = 1;
         
-        fd_t timer_fd = syscall(SYS_perf_event_open, &timer, -1, cpu_idx, -1, 0);
+        fd_t timer_fd = perf_event_open(&timer, -1, cpu_idx, -1, 0);
         if (timer_fd < 0)
         {
             ERROR("Failed to get file descriptor for PERF_COUNT_SW_CPU_CLOCK\n");
@@ -243,8 +262,7 @@ void UserspaceLoader::_init_perf_event_map()
     {
         FOREACH_CORE(cpu_idx, _cpu_count)
         {
-            fd_t perf_event_fd = syscall(
-                SYS_perf_event_open, &perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
+            fd_t perf_event_fd = perf_event_open(&perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
             if (perf_event_fd < 0)
             {
                 WARNING("Failed to get file descriptor for perf event '%s' on core %ld, likely not available on this system\n",
@@ -260,9 +278,10 @@ void UserspaceLoader::_init_perf_event_map()
     }
 }
 
-void UserspaceLoader::_init_rapl_map()
+void UserspaceLoader::_init_rapl_event_map()
 {
-    fd_t rapl_map_fd = bpf_map__fd(_data_bpf->maps.rapl_map);
+    fd_t rapl_map_fd = bpf_map__fd(_data_bpf->maps.rapl_event_map);
+
     int rapl_type = read_rapl_type();
     if (rapl_type < 0)
     {
@@ -285,11 +304,10 @@ void UserspaceLoader::_init_rapl_map()
         rapl_event.size   = sizeof(struct perf_event_attr);
         rapl_event.config = rapl_config;
 
-        fd_t rapl_event_fd = syscall(
-            SYS_perf_event_open, &rapl_event, -1, 0, -1, 0);
+        fd_t rapl_event_fd = perf_event_open(&rapl_event, -1, 0, -1, 0);
         if (rapl_event_fd < 0)
         {
-            WARNING("Failed to get file descriptor for RAPL domain '%s', likely not available on this system\n",
+            WARNING("Failed to get file descriptor for RAPL domain '%s'\n",
                 rapl_domain_names[domain_idx]);
             continue;
         }
@@ -301,7 +319,7 @@ void UserspaceLoader::_init_rapl_map()
     }
 }
 
-void UserspaceLoader::_init_per_core_iterators()
+void UserspaceLoader::_init_core_iterators()
 {
     _core_iterator_bpfs = std::vector<struct core_iterator_bpf*>(_cpu_count);
 
@@ -316,9 +334,7 @@ void UserspaceLoader::_init_per_core_iterators()
             exit(EXIT_FAILURE);
         }
 
-        bpf_map__reuse_fd(iterator_bpf->maps.perf_event_map,     bpf_map__fd(_data_bpf->maps.perf_event_map));
-        bpf_map__reuse_fd(iterator_bpf->maps.rapl_map,           bpf_map__fd(_data_bpf->maps.rapl_map));
-        bpf_map__reuse_fd(iterator_bpf->maps.per_core_stats_map, bpf_map__fd(_data_bpf->maps.per_core_stats_map));
+        bpf_map__reuse_fd(iterator_bpf->maps.core_stats_map, bpf_map__fd(_data_bpf->maps.core_stats_map));
 
         iterator_bpf->rodata->target_cpu_idx = (uint32_t)cpu_idx;
         iterator_bpf->rodata->verbose        = _options.verbose;
@@ -330,7 +346,7 @@ void UserspaceLoader::_init_per_core_iterators()
         }
 
         union bpf_iter_link_info linfo = {};
-        linfo.map.map_fd = (uint32_t)bpf_map__fd(_data_bpf->maps.per_core_stats_map);
+        linfo.map.map_fd = (uint32_t)bpf_map__fd(_data_bpf->maps.core_stats_map);
 
         LIBBPF_OPTS(bpf_iter_attach_opts, attach_opts,
             .link_info     = &linfo,
@@ -359,7 +375,7 @@ void UserspaceLoader::_init_per_core_iterators()
     }
 }
 
-void UserspaceLoader::_init_per_rapl_domain_iterators()
+void UserspaceLoader::_init_rapl_iterators()
 {
     _rapl_iterator_bpfs = std::vector<struct rapl_iterator_bpf*>(RAPL_DOMAINS_MAX);
 
@@ -374,7 +390,7 @@ void UserspaceLoader::_init_per_rapl_domain_iterators()
             exit(EXIT_FAILURE);
         }
 
-        bpf_map__reuse_fd(iterator_bpf->maps.per_rapl_domain_stats_map, bpf_map__fd(_data_bpf->maps.per_rapl_domain_stats_map));
+        bpf_map__reuse_fd(iterator_bpf->maps.rapl_stats_map, bpf_map__fd(_data_bpf->maps.rapl_stats_map));
 
         iterator_bpf->rodata->target_rapl_domain_idx = (uint32_t)domain_idx;
         iterator_bpf->rodata->verbose                = _options.verbose;
@@ -386,7 +402,7 @@ void UserspaceLoader::_init_per_rapl_domain_iterators()
         }
 
         union bpf_iter_link_info linfo = {};
-        linfo.map.map_fd = (uint32_t)bpf_map__fd(_data_bpf->maps.per_rapl_domain_stats_map);
+        linfo.map.map_fd = (uint32_t)bpf_map__fd(_data_bpf->maps.rapl_stats_map);
 
         LIBBPF_OPTS(bpf_iter_attach_opts, attach_opts,
             .link_info     = &linfo,

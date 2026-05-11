@@ -1,3 +1,8 @@
+/**
+ * @file definitions.hpp
+ * @author Seth Moore (slmoore@hamilton.edu)
+ * 
+ */
 #ifndef COMMON_DEFINITIONS_H
 #define COMMON_DEFINITIONS_H
 

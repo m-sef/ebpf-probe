@@ -22,6 +22,8 @@ public:
     UserspaceLoader(const struct options& options);
     ~UserspaceLoader();
 
+    void init();
+
     UserspaceLoader(const UserspaceLoader& other) = delete;
     UserspaceLoader& operator=(const UserspaceLoader& other) = delete;
     UserspaceLoader(UserspaceLoader&& other) = delete;
@@ -36,10 +38,10 @@ private:
     void _attach_timer(int sample_frequency);
 
     void _init_perf_event_map();
-    void _init_rapl_map();
+    void _init_rapl_event_map();
 
-    void _init_per_core_iterators();
-    void _init_per_rapl_domain_iterators();
+    void _init_core_iterators();
+    void _init_rapl_iterators();
 
     const struct options _options;
     const __u32 _cpu_count;

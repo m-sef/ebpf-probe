@@ -1,3 +1,8 @@
+/**
+ * @file rapl_helpers.hpp
+ * @author Seth Moore (slmoore@hamilton.edu)
+ * 
+ */
 #ifndef RAPL_HELPERS_H
 #define RAPL_HELPERS_H
 
