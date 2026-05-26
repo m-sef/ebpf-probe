@@ -235,6 +235,12 @@ void UserspaceLoader::_attach_timer(int sample_frequency)
         fd_t timer_fd = perf_event_open(&timer, -1, cpu_idx, -1, 0);
         if (timer_fd < 0)
         {
+            if (errno == ENODEV)
+            {
+                WARNING("CPU %ld is offline, skipping timer attachment\n", cpu_idx);
+                continue;
+            }
+
             ERROR("Failed to get file descriptor for PERF_COUNT_SW_CPU_CLOCK\n");
             exit(EXIT_FAILURE);
         }
