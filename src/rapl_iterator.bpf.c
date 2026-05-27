@@ -9,12 +9,6 @@
 #include <bpf_definitions.h>
 #include <bpf_shared_maps.h>
 
-#define VERBOSE_OUTPUT \
-"%s:\n" \
-"    value: %llu\n"
-
-#define DEFAULT_OUTPUT "%llu\n"
-
 volatile const bool verbose;
 volatile const char scale[32];
 volatile const char unit[32];
@@ -46,17 +40,7 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
     if (!ptr)
         return 0;
     
-    if (verbose)
-    {
-        BPF_SEQ_PRINTF(seq, VERBOSE_OUTPUT,
-            rapl_domain_names[target_rapl_domain_idx],
-            ptr->counter);
-    }
-    else
-    {
-        BPF_SEQ_PRINTF(seq, DEFAULT_OUTPUT,
-            ptr->counter);
-    }
+    BPF_SEQ_PRINTF(seq, "%llu\n", ptr->counter);
     
     return 0;
 }
