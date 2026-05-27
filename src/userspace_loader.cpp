@@ -128,6 +128,8 @@ void UserspaceLoader::init()
 
     _attach_xdp(_options.interface_name);
     _attach_timer(_options.sample_frequency);
+
+    INFO("ebpf-probe started successfully\n");
 }
 
 static inline void

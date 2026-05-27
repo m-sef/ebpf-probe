@@ -9,16 +9,22 @@
 #define LENGTH_OF(a) (sizeof(a) / sizeof((a)[0]))
 
 #define INFO(message, ...) \
+do { \
     fprintf(stdout, "[INFO] "); \
-    fprintf(stdout, message, ##__VA_ARGS__)
+    fprintf(stdout, message, ##__VA_ARGS__); \
+} while (0)
 
 #define WARNING(message, ...) \
+do { \
     fprintf(stderr, "[WARNING] "); \
-    fprintf(stderr, message, ##__VA_ARGS__)
+    fprintf(stderr, message, ##__VA_ARGS__); \
+} while (0)
 
 #define ERROR(message, ...) \
+do { \
     fprintf(stderr, "[ERROR] "); \
-    fprintf(stderr, message, ##__VA_ARGS__);
+    fprintf(stderr, message, ##__VA_ARGS__); \
+} while (0)
 
 typedef struct options {
     char* interface_name; /* Listen for packets on this network interface */
