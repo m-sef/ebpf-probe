@@ -29,9 +29,9 @@
 
 #define ROOT_PRIVILEGES 0
 
-#define FOREACH_CORE(i, n) for (size_t i = 0; i < n; i++)
-#define FOREACH_PERF_EVENT(i, n) for (size_t i = 0; i < n; i++)
-#define FOREACH_RAPL_DOMAIN(i, n) for (size_t i = 0; i < n; i++)
+#define FOREACH_CPU(i) for (size_t i = 0; i < _cpu_count; i++)
+#define FOREACH_PERF_EVENT(i) for (size_t i = 0; i < NUM_EVENT_TYPES; i++)
+#define FOREACH_RAPL_DOMAIN(i) for (size_t i = 0; i < RAPL_DOMAINS_MAX; i++)
 
 static struct perf_event_attr perf_events[] = {
     [CPU_CYCLES]          = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CPU_CYCLES},
@@ -68,7 +68,7 @@ UserspaceLoader::UserspaceLoader(
     : _options(options)
     , _cpu_count(libbpf_num_possible_cpus())
 {
-    
+
 }
 
 UserspaceLoader::~UserspaceLoader()
@@ -176,7 +176,7 @@ void UserspaceLoader::_remove_sys_directories()
 
 void UserspaceLoader::_remove_core_files()
 {
-    FOREACH_CORE(cpu_idx, _cpu_count)
+    FOREACH_CPU(cpu_idx)
     {
         char file_path[64];
         snprintf(file_path, sizeof(file_path), "/sys/fs/bpf/ebpf_probe/core/%ld", cpu_idx);
@@ -186,7 +186,7 @@ void UserspaceLoader::_remove_core_files()
 
 void UserspaceLoader::_remove_rapl_files()
 {
-    FOREACH_RAPL_DOMAIN(domain_idx, RAPL_DOMAINS_MAX)
+    FOREACH_RAPL_DOMAIN(domain_idx)
     {
         char file_path[64];
         snprintf(file_path, sizeof(file_path), "/sys/fs/bpf/ebpf_probe/rapl/%s", rapl_domain_names[domain_idx]);
@@ -226,7 +226,7 @@ perf_event_open(
 void UserspaceLoader::_attach_timer(int sample_frequency)
 {
     /* Attaches the Software CPU Clock perf event to the bpf program 'perf_event_handler' */
-    FOREACH_CORE(cpu_idx, _cpu_count)
+    FOREACH_CPU(cpu_idx)
     {
         struct perf_event_attr timer = {};
         timer.type        = PERF_TYPE_SOFTWARE;
@@ -265,9 +265,9 @@ void UserspaceLoader::_init_perf_event_map()
     fd_t perf_event_map_fd = bpf_map__fd(_data_bpf->maps.perf_event_map);
 
     /* Add the file descriptors for each perf_event to the BPF program's perf_event_map */
-    FOREACH_PERF_EVENT(perf_event_idx, NUM_EVENT_TYPES)
+    FOREACH_PERF_EVENT(perf_event_idx)
     {
-        FOREACH_CORE(cpu_idx, _cpu_count)
+        FOREACH_CPU(cpu_idx)
         {
             fd_t perf_event_fd = perf_event_open(&perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
             if (perf_event_fd < 0)
@@ -296,7 +296,7 @@ void UserspaceLoader::_init_rapl_event_map()
         exit(EXIT_FAILURE);
     }
 
-    FOREACH_RAPL_DOMAIN(domain_idx, RAPL_DOMAINS_MAX)
+    FOREACH_RAPL_DOMAIN(domain_idx)
     {
         int rapl_config = read_rapl_config(rapl_domain_names[domain_idx]);
         if (rapl_config < 0)
@@ -330,7 +330,7 @@ void UserspaceLoader::_init_core_iterators()
 {
     _core_iterator_bpfs = std::vector<struct core_iterator_bpf*>(_cpu_count);
 
-    FOREACH_CORE(cpu_idx, _cpu_count)
+    FOREACH_CPU(cpu_idx)
     {
         _core_iterator_bpfs[cpu_idx] = core_iterator_bpf::open();
         struct core_iterator_bpf* iterator_bpf = _core_iterator_bpfs[cpu_idx];
@@ -386,7 +386,7 @@ void UserspaceLoader::_init_rapl_iterators()
 {
     _rapl_iterator_bpfs = std::vector<struct rapl_iterator_bpf*>(RAPL_DOMAINS_MAX);
 
-    FOREACH_RAPL_DOMAIN(domain_idx, RAPL_DOMAINS_MAX)
+    FOREACH_RAPL_DOMAIN(domain_idx)
     {
         _rapl_iterator_bpfs[domain_idx] = rapl_iterator_bpf::open();
         struct rapl_iterator_bpf* iterator_bpf = _rapl_iterator_bpfs[domain_idx];
