@@ -84,10 +84,10 @@ UserspaceLoader::~UserspaceLoader()
 
     data_bpf::destroy(_data_bpf);
     
-    for (auto& skeleton : _core_iterator_bpfs)
+    for (core_iterator_bpf* skeleton : _core_iterator_bpfs)
         core_iterator_bpf::destroy(skeleton);
     
-    for (auto& skeleton : _rapl_iterator_bpfs)
+    for (rapl_iterator_bpf* skeleton : _rapl_iterator_bpfs)
         rapl_iterator_bpf::destroy(skeleton);
 
     _remove_core_files();
