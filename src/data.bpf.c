@@ -16,7 +16,7 @@ increment_core_stats_network_counters(
         __u64 rx_bytes)
 {
     __u32 key = 0;
-    struct core_stats* ptr = bpf_map_lookup_elem(&core_stats_map, &key);
+    struct core_map_entry* ptr = bpf_map_lookup_elem(&core_stats_map, &key);
     if (ptr)
     {
         ptr->total_packets_received  += packets;
@@ -35,31 +35,34 @@ int xdp_probe(struct xdp_md* context)
     return XDP_PASS;
 }
 
-static inline __u64 
+static inline error_t
 read_perf_event_counter(
         size_t perf_event_type,
-        size_t cpu_idx)
+        size_t cpu_idx,
+        struct bpf_perf_event_value* value)
 {
     __u32 key = (cpu_idx * NUM_EVENT_TYPES) + perf_event_type;
-    struct bpf_perf_event_value value = {};
 
-    if (bpf_perf_event_read_value(&perf_event_map, key, &value, sizeof(value)) < 0)
-        return 0;
+    if (bpf_perf_event_read_value(&perf_event_map, key, value, sizeof(*value)) < 0)
+        return 1;
 
-    return value.counter;
+    return 0;
 }
 
-static inline __u64
-read_rapl_domain_event_counter(
+static inline error_t
+read_rapl_domain_counter(
         size_t rapl_domain_idx)
 {
     __u32 key = rapl_domain_idx;
-    struct bpf_perf_event_value value = {};
+    struct bpf_perf_event_value* value = bpf_map_lookup_elem(&rapl_stats_map, &key);
 
-    if (bpf_perf_event_read_value(&rapl_event_map, key, &value, sizeof(value)) < 0)
-        return 0;
+    if (!value)
+        return 1;
+    
+    if (bpf_perf_event_read_value(&rapl_event_map, key, value, sizeof(*value)) < 0)
+        return 1;
 
-    return value.counter;
+    return 0;
 }
 
 SEC("perf_event")
@@ -71,14 +74,14 @@ int timer(struct bpf_perf_event_data* ctx)
 {
     __u32 cpu_idx = bpf_get_smp_processor_id();
     __u32 key = 0;
-    struct core_stats* core_stats_ptr = bpf_map_lookup_elem(&core_stats_map, &key);
-    if (!core_stats_ptr)
+    struct core_map_entry* core_map_entry_ptr = bpf_map_lookup_elem(&core_stats_map, &key);
+    if (!core_map_entry_ptr)
         return 1;
     
-    core_stats_ptr->instructions   = read_perf_event_counter(INSTRUCTIONS,   cpu_idx);
-    core_stats_ptr->cpu_cycles     = read_perf_event_counter(CPU_CYCLES,     cpu_idx);
-    core_stats_ptr->ref_cpu_cycles = read_perf_event_counter(REF_CPU_CYCLES, cpu_idx);
-    core_stats_ptr->cache_misses   = read_perf_event_counter(CACHE_MISSES,   cpu_idx);
+    read_perf_event_counter(INSTRUCTIONS,   cpu_idx, &core_map_entry_ptr->instructions);
+    read_perf_event_counter(CPU_CYCLES,     cpu_idx, &core_map_entry_ptr->cpu_cycles);
+    read_perf_event_counter(REF_CPU_CYCLES, cpu_idx, &core_map_entry_ptr->ref_cpu_cycles);
+    read_perf_event_counter(CACHE_MISSES,   cpu_idx, &core_map_entry_ptr->cache_misses);
 
     /* RAPL events are opened on CPU 0. bpf_perf_event_read_value uses
      * perf_event_read_local, so reads from any other CPU return 0 and
@@ -86,35 +89,11 @@ int timer(struct bpf_perf_event_data* ctx)
     if (cpu_idx != 0)
         return 0;
     
-    key = RAPL_PKG;
-    struct domain_stats* pkg_domain_stats_ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
-    if (!pkg_domain_stats_ptr)
-        return 1;
-    pkg_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_PKG);
-
-    key = RAPL_CORE;
-    struct domain_stats* core_domain_stats_ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
-    if (!core_domain_stats_ptr)
-        return 1;
-    core_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_CORE);
-
-    key = RAPL_UNCORE;
-    struct domain_stats* uncore_domain_stats_ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
-    if (!uncore_domain_stats_ptr)
-        return 1;
-    uncore_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_UNCORE);
-
-    key = RAPL_DRAM;
-    struct domain_stats* dram_domain_stats_ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
-    if (!dram_domain_stats_ptr)
-        return 1;
-    dram_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_DRAM);
-
-    key = RAPL_PSYS;
-    struct domain_stats* psys_domain_stats_ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
-    if (!psys_domain_stats_ptr)
-        return 1;
-    psys_domain_stats_ptr->value = read_rapl_domain_event_counter(RAPL_PSYS);
+    read_rapl_domain_counter(RAPL_PKG);
+    read_rapl_domain_counter(RAPL_CORE);
+    read_rapl_domain_counter(RAPL_UNCORE);
+    read_rapl_domain_counter(RAPL_DRAM);
+    read_rapl_domain_counter(RAPL_PSYS);
 
     return 0;
 }

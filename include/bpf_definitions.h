@@ -10,24 +10,20 @@
 #include "vmlinux.h"
 #else
 #include <linux/types.h>
+#include <linux/bpf.h>
 #endif
 
-typedef struct core_stats {
-    __u64 timestamp_ns; /* Currently unused, may be removed */
+struct core_map_entry {
     __u64 total_packets_received;
     __u64 total_rx_bytes_received;
-    __u64 instructions;
-    __u64 cpu_cycles;
-    __u64 ref_cpu_cycles;
-    __u64 cache_misses;
-    __u64 rapl_counter; /* energy-pkg - Raw counter, needs to be multiplied with appropiate domain scale in post-processing */
-} core_stats_t;
-
-typedef struct domain_stats {
-    __u64 value;
-} domain_stats_t;
+    struct bpf_perf_event_value instructions;
+    struct bpf_perf_event_value cpu_cycles;
+    struct bpf_perf_event_value ref_cpu_cycles;
+    struct bpf_perf_event_value cache_misses;
+};
 
 typedef int fd_t;
+typedef int error_t;
 
 enum perf_event_map_ids {
     CPU_CYCLES          = 0,

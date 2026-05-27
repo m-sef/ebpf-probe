@@ -42,7 +42,7 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
         return 0;
     
     __u32 key = target_rapl_domain_idx;
-    struct domain_stats* ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
+    struct bpf_perf_event_value* ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
     if (!ptr)
         return 0;
     
@@ -50,12 +50,12 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
     {
         BPF_SEQ_PRINTF(seq, VERBOSE_OUTPUT,
             rapl_domain_names[target_rapl_domain_idx],
-            ptr->value);
+            ptr->counter);
     }
     else
     {
         BPF_SEQ_PRINTF(seq, DEFAULT_OUTPUT,
-            ptr->value);
+            ptr->counter);
     }
     
     return 0;

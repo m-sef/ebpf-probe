@@ -32,7 +32,7 @@ struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
     __uint(max_entries, 1);
     __type(key, __u32);
-    __type(value, struct core_stats);
+    __type(value, struct core_map_entry);
 } core_stats_map SEC(".maps");
 
 /* Updated by 'timer' bpf program, only updated on core 0 */
@@ -40,7 +40,7 @@ struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __uint(max_entries, 5);
     __type(key, __u32);
-    __type(value, struct domain_stats);
+    __type(value, struct bpf_perf_event_value);
 } rapl_stats_map SEC(".maps");
 
 
