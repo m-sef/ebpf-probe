@@ -15,7 +15,7 @@
 # RAPL: reads the raw u64 counter from /sys/fs/bpf/ebpf_probe/rapl/pkg and
 # converts to Joules with the Intel fixed-point scale (2^-32 J per count).
 #
-# Usage: sudo ./scripts/validate-with-perf.sh [duration_seconds]
+# Usage: sudo ./scripts/validate_with_perf.sh [duration_seconds]
 #        default duration: 5
 
 set -euo pipefail
