@@ -18,7 +18,7 @@ cat /sys/fs/bpf/ebpf_probe/core/* | column -t -s,
 
 On CloudLab c220g1, with stress-ng running, turboboost disabled, hyperthreads disabled, and all CPUs set to 'performance' mode:
 ```
-slmoore@node0:~/ebpf-probe$ sudo perf stat -a -e instructions,cache-misses,ref-cycles,power/energy-pkg/,power/energy-ram/ -x, stress-ng --cpu 0 --cpu-method int64
+slmoore@node0:~/ebpf-probe$ stress-ng --cpu 0 --cpu-method int64
 slmoore@node0:~/ebpf-probe$ sudo ./build/ebpf_probe --interface=lo --frequency=1000
 slmoore@node0:~/ebpf-probe$ sudo ./scripts/validate_with_perf 60
 
@@ -26,28 +26,28 @@ slmoore@node0:~/ebpf-probe$ sudo ./scripts/validate_with_perf 60
 
 Event                    eBPF (normalized)               perf stat      mux%       ratio
 -----                    -----------------               ---------      ----       -----
-instructions                 6097439260474           6097558844181     37.3%      1.0000
-cpu-cycles                   2283845878195           2284200455580     34.4%      0.9998
-ref-cycles                   2283623278570           2284348806906     29.7%      0.9997
-cache-misses                       3012804                 2954057     40.2%      1.0199
+instructions                 6099617338099           6099520385130     49.2%      1.0000
+cpu-cycles                   2283775473391           2283714063461     42.3%      1.0000
+ref-cycles                   2283615929549           2283945309530     41.6%      0.9999
+cache-misses                       2779970                 2596513     50.3%      1.0707
 
 Event                                 eBPF               perf stat       ratio
 -----                                 ----               ---------       -----
-energy-pkg (J)                   2382.4553                       4    595.6138
+energy-pkg (J)                   2361.9441                       4    590.4860
 
-rx_bytes          0 bytes
+rx_bytes          528 bytes
 
 --- raw perf stat output ---
 
  Performance counter stats for 'system wide':
 
- 6,097,558,844,181        instructions                     #    2.67  insn per cycle              (37.50%)
- 2,284,200,455,580        cpu-cycles                                                              (37.50%)
- 2,284,348,806,906        ref-cycles                                                              (33.75%)
-         2,954,057        cache-misses                                                            (36.67%)
-          4,715.18 Joules power/energy-pkg/                                                     
+ 6,099,520,385,130        instructions                     #    2.67  insn per cycle              (47.40%)
+ 2,283,714,063,461        cpu-cycles                                                              (44.27%)
+ 2,283,945,309,530        ref-cycles                                                              (48.96%)
+         2,596,513        cache-misses                                                            (50.00%)
+          4,695.51 Joules power/energy-pkg/                                                     
 
-      60.001875379 seconds time elapsed
+      60.004140167 seconds time elapsed
 ```
 
 On my personal laptop:
