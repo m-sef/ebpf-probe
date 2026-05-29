@@ -9,6 +9,7 @@ import matplotlib.pyplot
 import pandas
 
 COLUMNS = ['core', 'event', 'counter', 'enabled', 'running']
+EVENTS  = ['rx_packets', 'rx_bytes', 'instructions', 'cpu_cycles', 'ref_cpu_cycles', 'cache_misses']
 
 def sample_core(cpu_idx : int) -> pandas.DataFrame:
     data_frame = pandas.read_csv(f"/sys/fs/bpf/ebpf_probe/core/{cpu_idx}", 
@@ -38,8 +39,8 @@ def main() -> None:
         '-e', '--event', type=str, required=True, help="Event to graph")
     parser.add_argument(
         '-f', '--frequency', type=float, default=1.0, required=True, help="Frequency to sample in seconds")
-    #parser.add_argument(
-    #    '-g', '--graph', type=bool, default=False, required=False, help="Show matplotlib graph via GUI")
+    parser.add_argument(
+        '-g', '--graph', action='store_true', required=False, help="Show matplotlib graph via GUI")
     args = parser.parse_args()
 
     duration  : float = args.duration
