@@ -2,10 +2,12 @@
 # Usage: sample_cores_over_time.py [-h] -d DURATION -e EVENT -f FREQUENCY
 
 import os
-import sys
 import argparse
 import time
-import matplotlib.pyplot
+import socket
+import logging
+from logging import Logger
+from datetime import datetime
 import pandas
 
 COLUMNS = ['core', 'event', 'counter', 'enabled', 'running']
@@ -31,16 +33,33 @@ def sample_all_cores() -> pandas.DataFrame:
 
     return summed
 
+def init_logger(
+        name : str,
+        file_path : str,
+        level=logging.INFO,
+        date_format : str = "%Y-%m-%d %H:%M:%S") -> Logger:
+    """Function for creating new Logger objects
+    https://stackoverflow.com/questions/11232230/logging-to-two-files-with-different-settings"""
+
+    formatter = logging.Formatter(
+        '%(asctime)s,%(message)s',
+        datefmt=date_format)
+
+    handler = logging.FileHandler(file_path)        
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-d', '--duration', type=float, default=10.0, required=True, help="Duration to sample for in seconds")
     parser.add_argument(
-        '-e', '--event', type=str, required=True, help="Event to graph")
-    parser.add_argument(
         '-f', '--frequency', type=float, default=1.0, required=True, help="Frequency to sample in seconds")
-    parser.add_argument(
-        '-g', '--graph', action='store_true', required=False, help="Show matplotlib graph via GUI")
     args = parser.parse_args()
 
     duration  : float = args.duration
@@ -48,14 +67,15 @@ def main() -> None:
 
     data_frames = []
 
-    end_time = time.time() + duration
-    while (time.time() < end_time):
-        start = time.time()
+    try:
+        end_time = time.time() + duration
+        while (time.time() < end_time):
+            start = time.time()
 
-        data_frames.append(sample_all_cores())
+            data_frames.append(sample_all_cores())
 
-        elapsed = time.time() - start
-        time.sleep(max(0, frequency - elapsed))
+            elapsed = time.time() - start
+            time.sleep(max(0, frequency - elapsed)))
     
     data_frame = pandas.concat(data_frames)
     scales = (data_frame["enabled"] / data_frame["running"]).fillna(1.0)
@@ -69,12 +89,10 @@ def main() -> None:
 
     print(data_frame)
 
-    if (args.graph):
-        axis = data_frame[args.event].diff().plot()
-        axis.set_xlabel("Time (s)")
-        axis.set_ylabel(args.event)
-        matplotlib.pyplot.ticklabel_format(style='plain', axis='y')
-        matplotlib.pyplot.show()
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    hostname = socket.gethostname().split('.')[0]
+
+    data_frame.to_csv(f"{hostname}-ebpf-{timestamp}.csv")
 
 if __name__ == '__main__':
     main()
