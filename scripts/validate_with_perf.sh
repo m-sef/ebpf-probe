@@ -12,8 +12,8 @@
 # all CPUs. The mux% column shows how much of the enabled time the counter
 # was actually running (100% = no multiplexing, lower = scaling applied).
 #
-# RAPL: reads the raw u64 counter from /sys/fs/bpf/ebpf_probe/rapl/pkg and
-# converts to Joules with the Intel fixed-point scale (2^-32 J per count).
+# RAPL: reads /sys/fs/bpf/ebpf_probe/rapl/pkg (CSV: counter,unit,scale) and
+# converts to Joules using the scale field emitted by the rapl_iterator.
 #
 # Usage: sudo ./scripts/validate_with_perf.sh [duration_seconds]
 #        default duration: 5
@@ -21,7 +21,6 @@
 set -euo pipefail
 
 DURATION=${1:-5}
-RAPL_SCALE="2.3283064365386962890625e-10"   # 2^-32 J per RAPL count
 BPF_CORE_DIR="/sys/fs/bpf/ebpf_probe/core"
 BPF_RAPL_PKG="/sys/fs/bpf/ebpf_probe/rapl/pkg"
 EVENTS=(instructions cpu_cycles ref_cpu_cycles cache_misses)
@@ -105,9 +104,22 @@ snap0[rx_bytes]=0; snap1[rx_bytes]=0
 echo "=== eBPF probe vs perf stat (${DURATION}s window, system-wide) ==="
 echo
 
+# Read the rapl_iterator CSV: "#counter,unit,scale\n<counter>,<unit>,<scale>"
+# Sets caller variables: <prefix>_counter, rapl_unit, rapl_scale (from first call).
+read_rapl_snapshot() {
+    local prefix=$1
+    while IFS=, read -r _c _u _s; do
+        [[ "$_c" == "#counter" ]] && continue
+        printf -v "${prefix}_counter" '%s' "$_c"
+        rapl_unit="$_u"
+        rapl_scale="$_s"
+        return
+    done < "$BPF_RAPL_PKG"
+}
+
 # t0 snapshot
 read_snapshot snap0
-rapl0=$(< "$BPF_RAPL_PKG")
+read_rapl_snapshot rapl0
 
 # perf stat writes to stderr; capture both streams
 perf_raw=$(perf stat -a \
@@ -120,7 +132,7 @@ perf_raw=$(perf stat -a \
 
 # t1 snapshot
 read_snapshot snap1
-rapl1=$(< "$BPF_RAPL_PKG")
+read_rapl_snapshot rapl1
 
 # ---------------------------------------------------------------------------
 # Deltas and normalization
@@ -137,8 +149,8 @@ for e in "${EVENTS[@]}"; do
 done
 
 d_rx=$(( snap1[rx_bytes] - snap0[rx_bytes] ))
-d_rapl=$(( rapl1 - rapl0 ))
-bpf_joules=$(awk -v raw="$d_rapl" -v s="$RAPL_SCALE" 'BEGIN { printf "%.4f", raw * s }')
+d_rapl=$(( rapl1_counter - rapl0_counter ))
+bpf_joules=$(awk -v raw="$d_rapl" -v s="$rapl_scale" 'BEGIN { printf "%.4f", raw * s }')
 
 # ---------------------------------------------------------------------------
 # Parse perf stat output
@@ -169,7 +181,7 @@ echo
 printf "%-16s  %24s  %22s  %10s\n" "Event" "eBPF" "perf stat" "ratio"
 printf "%-16s  %24s  %22s  %10s\n" "-----" "----" "---------" "-----"
 printf "%-16s  %24s  %22s  %10s\n" \
-    "energy-pkg (J)" "$bpf_joules" "${perf_joules:-N/A}" "$(ratio "$bpf_joules" "${perf_joules:-0}")"
+    "energy-pkg (${rapl_unit})" "$bpf_joules" "${perf_joules:-N/A}" "$(ratio "$bpf_joules" "${perf_joules:-0}")"
 
 echo
 printf "%-16s  %d bytes\n" "rx_bytes" "$d_rx"
