@@ -40,7 +40,8 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
     if (!ptr)
         return 0;
     
-    BPF_SEQ_PRINTF(seq, "%llu\n", ptr->counter);
+    BPF_SEQ_PRINTF(seq, "#counter,unit,scale\n");
+    BPF_SEQ_PRINTF(seq, "%llu,%s,%s\n", ptr->counter, unit, scale);
     
     return 0;
 }

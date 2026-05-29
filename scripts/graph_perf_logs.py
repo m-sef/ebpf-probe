@@ -39,8 +39,8 @@ def main() -> None:
 	#	exit()
 	
 	file_paths  : list[str]   = [
-		"logs/without-ebpf-probe/node0-perf-2026-04-08_22-57-01.log",
-		"logs/with-ebpf-probe/node0-perf-2026-04-08_22-53-26.log",
+		"logs/2026-05-29_10:27:32/node0-perf-2026-05-29_09-27-34.log",
+		"logs/2026-05-29_10:33:01/node0-perf-2026-05-29_09-33-02.log",
 	]
 	log_names   : list[str]   = ['Without ebpf-probe', 'With ebpf-probe']
 	line_styles : list[str]   = ['solid', 'solid']
@@ -56,6 +56,7 @@ def main() -> None:
 	axis5 = plt.subplot2grid((2, 6), (1, 3), colspan=3)
 
 	axes = [axis1, axis2, axis3, axis4, axis5]
+	handles = []
 
 	for line_style, line_width, file_path in zip(line_styles, line_widths, file_paths):
 		data_frame = pd.read_csv(file_path, comment='#', header=None, na_values='na')
@@ -72,22 +73,23 @@ def main() -> None:
 		# Normalize timestamps
 		data_frame.index = (data_frame.index - data_frame.index.min()).total_seconds()
 		
-		data_frame['cache-misses'] = data_frame['cache-misses'] / 100_000
+		data_frame['cpu-cycles']   = data_frame['cpu-cycles']   / 1_000_000
 		data_frame['instructions'] = data_frame['instructions'] / 1_000_000
 		data_frame['ref-cycles']   = data_frame['ref-cycles']   / 1_000_000
+		data_frame['ipc']          = data_frame['instructions'] / data_frame['cpu-cycles']
 
 		# Plot
-		data_frame['cache-misses']     .plot(ax=axis1, title='cache-misses', linewidth=line_width, linestyle=line_style)
+		data_frame['cpu-cycles']       .plot(ax=axis1, title='cpu-cycles',   linewidth=line_width, linestyle=line_style)
 		data_frame['instructions']     .plot(ax=axis2, title='instructions', linewidth=line_width, linestyle=line_style)
 		data_frame['ref-cycles']       .plot(ax=axis3, title='ref-cycles',   linewidth=line_width, linestyle=line_style)
 
 		color = axis1.get_lines()[-1].get_color()
 
-		axis1_median = data_frame['cache-misses'].median()
+		axis1_median = data_frame['cpu-cycles'].median()
 		#axis1.axhline(y=axis1_median, color=color, linewidth=1.2, linestyle='dashed', label="Median")
 		#axis1.text(x=axis1.get_xlim()[0], y=axis1_median, s=f'median', color=color, va='bottom', ha='left', fontsize=7)
 		axis1.set_xlabel("Time (s)")
-		axis1.set_ylabel("cache-misses (x100,000)")
+		axis1.set_ylabel("cpu-cycles (x1,000,000)")
 		#axis1.set_ylim(get_interquartile_range(data_frame['cache-misses']))
 
 		axis2_median = data_frame['instructions'].median()
@@ -105,7 +107,14 @@ def main() -> None:
 		#axis3.set_ylim(get_interquartile_range(data_frame['ref-cycles']))
 
 		data_frame['power/energy-pkg/'].plot(ax=axis4, title='power/energy-pkg/', linewidth=line_width, linestyle=line_style)
-		data_frame['power/energy-ram/'].plot(ax=axis5, title='power/energy-ram/', linewidth=line_width, linestyle=line_style)
+
+		data_frame['ipc'].plot(ax=axis5, title='IPC (instructions per cycle)', linewidth=line_width, linestyle=line_style)
+		handles.append(axis5.get_lines()[-1])
+		axis5_median = data_frame['ipc'].median()
+		axis5.axhline(y=axis5_median, color=color, linewidth=1.2, linestyle='dashed', label="Median")
+		axis5.text(x=axis5.get_xlim()[0], y=axis5_median, s=f'median', color=color, va='bottom', ha='left', fontsize=7)
+		axis5.set_xlabel("Time (s)")
+		axis5.set_ylabel("IPC")
 
 	for axis in axes:
 		axis.ticklabel_format(useOffset=False, style='plain', axis='y')
@@ -123,17 +132,15 @@ def main() -> None:
 	axis3.yaxis.set_major_formatter(tkr.StrMethodFormatter('{x:,.0f}'))
 
 	axis4.set_ylim(bottom=0.0)
-	axis5.set_ylim(bottom=0.0)
-	
 	axis4.set_xlabel("Time (s)")
 	axis4.set_ylabel("Joules")
-	axis5.set_xlabel("Time (s)")
-	axis5.set_ylabel("Joules")
+
+	axis5.set_ylim(bottom=0.0)
 
 	#figure.suptitle(" V.S. ".join(log_names))
 	#figure.tight_layout()
 	plt.subplots_adjust(hspace=0.30, wspace=0.50)
-	plt.legend(log_names, loc="lower right")
+	figure.legend(handles=handles, labels=log_names, loc="lower right")
 	#plt.savefig("plot.pdf")
 	plt.show()
 

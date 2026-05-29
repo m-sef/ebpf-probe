@@ -8,8 +8,9 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 
-static inline int
+int
 read_rapl_type()
 {
 	FILE* file;
@@ -29,7 +30,7 @@ read_rapl_type()
 	return type;
 }
 
-static inline int
+int
 read_rapl_config(
         const char* domain)
 {
@@ -55,6 +56,56 @@ read_rapl_config(
 
 	fclose(file);
 	return config;
+}
+
+int
+read_rapl_unit(
+		const char* domain,
+		char* buffer,
+		size_t size)
+{
+	char path[256];
+	FILE* file;
+
+	snprintf(path, sizeof(path), "/sys/bus/event_source/devices/power/events/energy-%s.unit", domain);
+	file = fopen(path, "r");
+	if (!file)
+		return -1;
+
+	if (!fgets(buffer, size, file))
+	{
+		fclose(file);
+		return -1;
+	}
+	buffer[strcspn(buffer, "\n")] = '\0';
+	fclose(file);
+
+	return 0;
+}
+
+int
+read_rapl_scale(
+		const char* domain,
+		char* buffer,
+		size_t size)
+{
+	char path[256];
+	FILE* file;
+
+	snprintf(path, sizeof(path), "/sys/bus/event_source/devices/power/events/energy-%s.scale", domain);
+	file = fopen(path, "r");
+	if (!file)
+		return -1;
+
+	if (!fgets(buffer, size, file))
+	{
+		fclose(file);
+		return -1;
+	}
+	buffer[strcspn(buffer, "\n")] = '\0';
+	fclose(file);
+
+	return 0;
 }
 
 #endif

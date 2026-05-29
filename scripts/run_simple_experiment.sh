@@ -6,11 +6,11 @@ TIMESTAMP=$(date +%Y-%m-%d_%H:%M:%S)
 
 run_experiment() {
 	ssh $NGINX_NODE "~/power-consumption-logger/power-consumption-logger.py" &
-	ssh $NGINX_NODE "sudo ~/ebpf-probe/build/ebpf_probe --interface=enp129s0f0np0" &
-	ssh $WRK_NODE "~/firm/benchmarks/1-social-network/wrk2/wrk --connections=32 --threads=32 --duration=1m --rate=10000 http://10.10.1.1:80"
+	ssh $NGINX_NODE "sudo ~/ebpf-probe/build/ebpf_probe --interface=enp6s0f1" &
+	ssh $WRK_NODE "~/firm/benchmarks/1-social-network/wrk2/wrk --connections=32 --threads=32 --duration=5m --rate=10000 http://10.10.1.1:80"
 
 	ssh $NGINX_NODE "pkill -INT -f power-consumption-logger"
-    ssh $NGINX_NODE "sudo pkill -INT logger"
+    ssh $NGINX_NODE "sudo pkill -INT ebpf_probe"
 }
 
 get_remote_logs() {
