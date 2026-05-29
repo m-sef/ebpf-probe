@@ -10,29 +10,56 @@
 #include <bpf_definitions.h>
 #include <bpf_shared_maps.h>
 
+#define TC_ACT_OK 0
+
 static inline void
-increment_core_stats_network_counters(
-        __u64 packets,
+increment_core_stats_rx_counters(
+        __u64 rx_packets,
         __u64 rx_bytes)
 {
     __u32 key = 0;
     struct core_map_entry* ptr = bpf_map_lookup_elem(&core_stats_map, &key);
     if (ptr)
     {
-        ptr->total_packets_received  += packets;
-        ptr->total_rx_bytes_received += rx_bytes;
+        ptr->rx_packets += rx_packets;
+        ptr->rx_bytes   += rx_bytes;
+    }
+}
+
+static inline void
+increment_core_stats_tx_counters(
+        __u64 tx_packets,
+        __u64 tx_bytes)
+{
+    __u32 key = 0;
+    struct core_map_entry* ptr = bpf_map_lookup_elem(&core_stats_map, &key);
+    if (ptr)
+    {
+        ptr->tx_packets += tx_packets;
+        ptr->tx_bytes   += tx_bytes;
     }
 }
 
 SEC("xdp")
-int xdp_probe(struct xdp_md* context)
+int xdp_ingress(struct xdp_md* context)
 {
     void* data     = (void*)(long)context->data;
     void* data_end = (void*)(long)context->data_end;
 
-    increment_core_stats_network_counters(1, data_end - data);
+    increment_core_stats_rx_counters(1, data_end - data);
 
     return XDP_PASS;
+}
+
+SEC("tc")
+int tc_egress(struct __sk_buff* context)
+{
+    void* data_end = (void *)(__u64)context->data_end;
+    void* data     = (void *)(__u64)context->data;
+
+    increment_core_stats_tx_counters(1, data_end - data);
+
+    return TC_ACT_OK;
 }
 
 static inline error_t

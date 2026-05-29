@@ -34,6 +34,7 @@ private:
     void _remove_rapl_files();
 
     void _attach_xdp(const std::string& interface_name);
+    void _attach_tc(const std::string& interface_name);
     void _attach_timer(int sample_frequency);
 
     void _init_perf_event_map();

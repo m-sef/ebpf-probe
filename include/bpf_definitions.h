@@ -14,8 +14,10 @@
 #endif
 
 struct core_map_entry {
-    __u64 total_packets_received;
-    __u64 total_rx_bytes_received;
+    __u64 rx_packets;
+    __u64 rx_bytes;
+    __u64 tx_packets;
+    __u64 tx_bytes;
     struct bpf_perf_event_value instructions;
     struct bpf_perf_event_value cpu_cycles;
     struct bpf_perf_event_value ref_cpu_cycles;

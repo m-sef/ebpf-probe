@@ -127,6 +127,7 @@ void UserspaceLoader::init()
     _init_rapl_iterators();
 
     _attach_xdp(_options.interface_name);
+    _attach_tc(_options.interface_name);
     _attach_timer(_options.sample_frequency);
 
     INFO("ebpf-probe started successfully\n");
@@ -203,10 +204,20 @@ void UserspaceLoader::_attach_xdp(const std::string& interface_name)
         exit(EXIT_FAILURE);
     }
 
-    _data_bpf->links.xdp_probe = bpf_program__attach_xdp(_data_bpf->progs.xdp_probe, interface_index);
-    if (!_data_bpf->links.xdp_probe)
+    _data_bpf->links.xdp_ingress = bpf_program__attach_xdp(_data_bpf->progs.xdp_ingress, interface_index);
+    if (!_data_bpf->links.xdp_ingress)
     {
         ERROR("Failed to attach BPF program to XDP hook\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void UserspaceLoader::_attach_tc(const std::string& interface_name)
+{
+    int interface_index = if_nametoindex(interface_name.c_str());
+    if (!interface_index)
+    {
+        ERROR("Could not find interface \"%s\"\n", interface_name.c_str());
         exit(EXIT_FAILURE);
     }
 }
