@@ -6,6 +6,6 @@ CLAUDE.md
 /include/vmlinux.h
 /include/*.skel.h
 
-*.log
-/logs/*
-!/logs/.gitkeep
+/benchmark/logs/*
+/benchmark/logs/*/
+!/benchmark/logs/.gitkeep

@@ -16,7 +16,8 @@ cat /sys/fs/bpf/ebpf_probe/core/* | column -t -s,
 
 ### Results:
 
-OUTDATED as of May 29th, 2026
+__OUTDATED as of May 29th, 2026__
+
 On CloudLab c220g1, with stress-ng running, turboboost disabled, hyperthreads disabled, and all CPUs set to 'performance' mode:
 ```
 slmoore@node0:~/ebpf-probe$ stress-ng --cpu 0 --cpu-method int64
