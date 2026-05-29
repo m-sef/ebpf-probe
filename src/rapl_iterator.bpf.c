@@ -10,6 +10,7 @@
 #include <bpf_shared_maps.h>
 
 volatile const bool verbose;
+volatile const char rapl_domain_name[32];
 volatile const char scale[32];
 volatile const char unit[32];
 volatile const __u32 target_rapl_domain_idx;
@@ -40,8 +41,8 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
     if (!ptr)
         return 0;
     
-    BPF_SEQ_PRINTF(seq, "#counter,unit,scale\n");
-    BPF_SEQ_PRINTF(seq, "%llu,%s,%s\n", ptr->counter, unit, scale);
+    BPF_SEQ_PRINTF(seq, "#domain,counter,unit,scale\n");
+    BPF_SEQ_PRINTF(seq, "%s,%llu,%s,%s\n", rapl_domain_name, ptr->counter, unit, scale);
     
     return 0;
 }

@@ -401,8 +401,9 @@ void UserspaceLoader::_init_rapl_iterators()
 
         iterator_bpf->rodata->target_rapl_domain_idx = (uint32_t)domain_idx;
         iterator_bpf->rodata->verbose                = _options.verbose;
-        read_rapl_unit(rapl_domain_names[domain_idx], iterator_bpf->rodata->unit, 32);
-        read_rapl_scale(rapl_domain_names[domain_idx], iterator_bpf->rodata->scale, 32);
+        strncpy(iterator_bpf->rodata->rapl_domain_name, rapl_domain_names[domain_idx], sizeof(iterator_bpf->rodata->rapl_domain_name) - 1);
+        read_rapl_unit(rapl_domain_names[domain_idx], iterator_bpf->rodata->unit, sizeof(iterator_bpf->rodata->unit));
+        read_rapl_scale(rapl_domain_names[domain_idx], iterator_bpf->rodata->scale, sizeof(iterator_bpf->rodata->scale));
 
         if (rapl_iterator_bpf::load(iterator_bpf) != 0)
         {
