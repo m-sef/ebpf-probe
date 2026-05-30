@@ -13,25 +13,15 @@
 #include "definitions.hpp"
 #include "userspace_loader.hpp"
 
-const char short_options[] = "f:hi:v";
+#include "CLI11.hpp"
 
-const static struct option long_options[] = {
-    {"help",      no_argument,       nullptr, 'h'},
-    {"interface", required_argument, nullptr, 'i'},
-    {"frequency", required_argument, nullptr, 'f'},
-    {"verbose",   no_argument,       nullptr, 'v'},
-    {0, 0, 0, 0},
-};
-
-const static char* long_option_descriptions[] = {
-    "Display help message",
-    "Listen for network traffic on this interface",
-    "Frequency to sample perf and rapl events in Hz",
-    "Verbose output when reading pinned files",
-};
+#define DESCRIPTION \
+"An XDP-based packet counter with per-CPU hardware performance counter \
+and energy (RAPL) collection. Metrics are written to pinned BPF iterator files \
+under /sys/fs/bpf/ebpf_probe/ and can be read with standard shell tools."
 
 static struct options options = {
-    .interface_name = nullptr,
+    .interface_name = "lo",
     .sample_frequency = 1,
     .verbose = false,
 };
@@ -45,73 +35,19 @@ handle_signal_interrupt(
     running = false;
 }
 
-static inline void
-put_usage(
-        char* program_name)
-{
-    fprintf(stdout, "usage: %s -i INTERFACE [-f FREQUENCY] [-hv]\n", program_name);
-}
-
-static inline void
-put_help(
-        char* program_name)
-{
-    put_usage(program_name);
-
-    fprintf(stdout, "\noptions:\n");
-    for (size_t i = 0; i < LENGTH_OF(long_options) - 1; i++)
-    {
-        fprintf(stdout, "  -%c, --%-18s %s\n",
-            (char)long_options[i].val,
-            long_options[i].name,
-            long_option_descriptions[i]);
-    }
-}
-
-static inline void
-parse_arguments(
-        int    argc,
-        char** argv)
-{
-    int option_index = 0;
-    int opt;
-
-    while ((opt = getopt_long(argc, argv, short_options, long_options, &option_index)) != -1)
-    {
-        switch (opt)
-        {
-        case 'h':
-            put_help(argv[0]);
-            exit(EXIT_SUCCESS);
-              
-        case 'i':
-            options.interface_name = optarg;
-            break;
-        
-        case 'f':
-            options.sample_frequency = atoi(optarg);
-            break;
-        
-        case 'v':
-            options.verbose = true;
-            break;
-              
-        default:
-            put_usage(argv[0]);
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    if (options.interface_name == nullptr)
-    {
-        put_usage(argv[0]);
-        exit(EXIT_FAILURE);
-    }
-}
-
 int main(int argc, char** argv)
 {
-    parse_arguments(argc, argv);
+    CLI::App app{DESCRIPTION, argv[0]};
+    argv = app.ensure_utf8(argv);
+
+    app.add_option("-i,--interface", options.interface_name, 
+        "Listen for network traffic on this interface (default: 'lo')");
+    app.add_option("-f,--frequency", options.sample_frequency,
+        "Sample at this frequency per second for each CPU (default: 1)");
+    app.add_flag("-v,--verbose", options.verbose,
+        "Verbose output (default: false)");
+    
+    CLI11_PARSE(app, argc, argv);
 
     UserspaceLoader userspace_loader(options);
     userspace_loader.init();

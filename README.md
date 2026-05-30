@@ -23,15 +23,15 @@ make
 ## Usage
 
 ```
-sudo ./build/ebpf_probe -i INTERFACE [-f FREQUENCY] [-hv]
+sudo ./build/ebpf_probe [-h] [OPTIONS]
 ```
 
 | Option | Long Option | Description |
 |--------|-------------|-------------|
 | `-h` | `--help` | Show help |
-| `-i INTERFACE` | `--interface` | Network interface to attach to (e.g. `eth0`, `ens3`) |
-| `-f FREQUENCY` | `--frequency` | Sampling frequency for perf/RAPL events in Hz (default: 1) |
-| `-v` | `--verbose` | Verbose output when reading pinned files |
+| `-i INTERFACE` | `--interface` | Listen for network traffic on this interface (default: `lo`) |
+| `-f FREQUENCY` | `--frequency` | Sample at this frequency per second for each CPU (default: 1) |
+| `-v` | `--verbose` | Verbose output (default: false) |
 
 ## Reading Core Metrics
 

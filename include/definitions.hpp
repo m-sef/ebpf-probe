@@ -6,6 +6,8 @@
 #ifndef COMMON_DEFINITIONS_H
 #define COMMON_DEFINITIONS_H
 
+#include <string>
+
 #define LENGTH_OF(a) (sizeof(a) / sizeof((a)[0]))
 
 #define INFO(message, ...) \
@@ -27,7 +29,7 @@ do { \
 } while (0)
 
 typedef struct options {
-    char* interface_name; /* Listen for packets on this network interface */
+    std::string interface_name; /* Listen for packets on this network interface */
     int sample_frequency;
     bool verbose;
 } options_t;
