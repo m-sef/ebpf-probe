@@ -33,6 +33,33 @@
 #define FOREACH_PERF_EVENT(i) for (size_t i = 0; i < NUM_EVENT_TYPES; i++)
 #define FOREACH_RAPL_DOMAIN(i) for (size_t i = 0; i < RAPL_DOMAINS_MAX; i++)
 
+#define INFOV(message, ...) \
+do { \
+    if (_options.verbose) \
+    { \
+        fprintf(stdout, "[INFO] "); \
+        fprintf(stdout, message, ##__VA_ARGS__); \
+    } \
+} while (0)
+
+#define WARNINGV(message, ...) \
+do { \
+    if (_options.verbose) \
+    { \
+        fprintf(stderr, "[WARNING] "); \
+        fprintf(stderr, message, ##__VA_ARGS__); \
+    } \
+} while (0)
+
+#define ERRORV(message, ...) \
+do { \
+    if (_options.verbose) { \
+        fprintf(stderr, "[ERROR] "); \
+        fprintf(stderr, message, ##__VA_ARGS__); \
+    } \
+} while (0)
+
+
 static struct perf_event_attr perf_events[] = {
     [CPU_CYCLES]          = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CPU_CYCLES},
     [INSTRUCTIONS]        = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_INSTRUCTIONS},
@@ -120,10 +147,10 @@ void UserspaceLoader::init()
 
     _create_sys_directories();
 
-    _init_perf_event_map();
-    _init_rapl_event_map();
+    FOREACH_CPU(cpu_idx)
+        _init_core(cpu_idx);
 
-    _init_core_iterators();
+    _init_rapl_event_map();
     _init_rapl_iterators();
 
     _attach_xdp(_options.interface_name);
@@ -236,7 +263,7 @@ perf_event_open(
 
 void UserspaceLoader::_attach_timer(int sample_frequency)
 {
-    /* Attaches the Software CPU Clock perf event to the bpf program 'perf_event_handler' */
+    /* Attaches the Software CPU Clock perf event to the bpf program 'timer' */
     FOREACH_CPU(cpu_idx)
     {
         struct perf_event_attr timer = {};
@@ -271,29 +298,123 @@ void UserspaceLoader::_attach_timer(int sample_frequency)
     }
 }
 
-void UserspaceLoader::_init_perf_event_map()
+bool UserspaceLoader::_is_core_online(size_t cpu_idx)
+{
+    char path[64];
+    snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%ld/online", cpu_idx);
+    FILE* file = fopen(path, "r");
+    if (!file)
+    {
+        /* All CPUs, with the exception of cpu 0, have an 'online' file */
+        return true;
+    }
+    
+    int value = 0;
+    if (fscanf(file, "%d", &value) != 1)
+    {
+        fclose(file);
+        return false;
+    }
+
+    fclose(file);
+    return (value == 1);
+}
+
+void UserspaceLoader::_init_core(size_t cpu_idx)
+{
+    /* If a core is offline, warn the user and move on */
+    if (!_is_core_online(cpu_idx))
+    {
+        WARNINGV("CPU %ld is offline\n", cpu_idx);
+        return;
+    }
+
+    /* Populate the BPF map which stores perf file descriptors */
+    _init_perf_event_map_for_core(cpu_idx);
+
+    /* Create files under the /sys/fs/bpf/ebpf_probe/core directory and attach 
+       Their associated iterators */
+    _init_iterator_for_core(cpu_idx);
+}
+
+void UserspaceLoader::_init_perf_event_map_for_core(size_t cpu_idx)
 {
     fd_t perf_event_map_fd = bpf_map__fd(_data_bpf->maps.perf_event_map);
 
-    /* Add the file descriptors for each perf_event to the BPF program's perf_event_map */
     FOREACH_PERF_EVENT(perf_event_idx)
     {
-        FOREACH_CPU(cpu_idx)
+        /* Attempt to open file descriptor for perf event, if it is not available
+           then warn the user. If it is available, add it to the BPF perf event map */
+        fd_t perf_event_fd = perf_event_open(&perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
+        if (perf_event_fd < 0)
         {
-            fd_t perf_event_fd = perf_event_open(&perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
-            if (perf_event_fd < 0)
-            {
-                WARNING("Failed to get file descriptor for perf event '%s' on core %ld, likely not available on this system\n",
-                    perf_event_names[perf_event_idx], cpu_idx);
-                continue;
-            }
-            
-            __u32 key = (cpu_idx * NUM_EVENT_TYPES) + perf_event_idx;
-            bpf_map_update_elem(perf_event_map_fd, &key, &perf_event_fd, BPF_ANY);
-
-            close(perf_event_fd);
+            WARNINGV("Failed to get file descriptor for perf event '%s' on core %ld, likely not available on this system\n",
+                perf_event_names[perf_event_idx], cpu_idx);
+            continue;
         }
+
+        __u32 key = (cpu_idx * NUM_EVENT_TYPES) + perf_event_idx;
+        bpf_map_update_elem(perf_event_map_fd, &key, &perf_event_fd, BPF_ANY);
+
+        close(perf_event_fd);
     }
+
+    INFOV("Successfully populated BPF perf event map for core %ld\n", cpu_idx);
+}
+
+void UserspaceLoader::_init_iterator_for_core(size_t cpu_idx)
+{
+    _core_iterator_bpfs = std::vector<struct core_iterator_bpf*>(_cpu_count);
+    _core_iterator_bpfs[cpu_idx] = core_iterator_bpf::open();
+
+    struct core_iterator_bpf* iterator_bpf = _core_iterator_bpfs[cpu_idx];
+
+    if (iterator_bpf == nullptr)
+    {
+        ERROR("Failed to open iterator BPF object for core %ld\n", cpu_idx);
+        exit(EXIT_FAILURE);
+    }
+
+    bpf_map__reuse_fd(iterator_bpf->maps.core_stats_map, bpf_map__fd(_data_bpf->maps.core_stats_map));
+
+    iterator_bpf->rodata->target_cpu_idx = (uint32_t)cpu_idx;
+    iterator_bpf->rodata->verbose        = _options.verbose;
+
+    if (core_iterator_bpf::load(iterator_bpf) != 0)
+    {
+        ERROR("Failed to load iterator BPF object for core %ld\n", cpu_idx);
+        exit(EXIT_FAILURE);
+    }
+
+    union bpf_iter_link_info linfo = {};
+    linfo.map.map_fd = (uint32_t)bpf_map__fd(_data_bpf->maps.core_stats_map);
+
+    LIBBPF_OPTS(bpf_iter_attach_opts, attach_opts,
+        .link_info     = &linfo,
+        .link_info_len = sizeof(linfo),
+    );
+
+    struct bpf_link* link = bpf_program__attach_iter(
+        iterator_bpf->progs.dump_counters, &attach_opts);
+    if (link == nullptr)
+    {
+        ERROR("Failed to attach iterator for core %ld\n", cpu_idx);
+        exit(EXIT_FAILURE);
+    }
+
+    char file_path[64];
+    snprintf(file_path, sizeof(file_path), "/sys/fs/bpf/ebpf_probe/core/%ld", cpu_idx);
+
+    if (bpf_link__pin(link, file_path) != 0)
+    {
+        ERROR("Failed to pin iterator link for core %ld\n", cpu_idx);
+        bpf_link__destroy(link);
+        exit(EXIT_FAILURE);
+    }
+
+    _core_iterator_links.push_back(link);
+
+    INFOV("Successfuly initialized iterator for core %ld\n", cpu_idx);
 }
 
 void UserspaceLoader::_init_rapl_event_map()
@@ -334,62 +455,6 @@ void UserspaceLoader::_init_rapl_event_map()
         bpf_map_update_elem(rapl_map_fd, &key, &rapl_event_fd, BPF_ANY);
 
         close(rapl_event_fd);
-    }
-}
-
-void UserspaceLoader::_init_core_iterators()
-{
-    _core_iterator_bpfs = std::vector<struct core_iterator_bpf*>(_cpu_count);
-
-    FOREACH_CPU(cpu_idx)
-    {
-        _core_iterator_bpfs[cpu_idx] = core_iterator_bpf::open();
-        struct core_iterator_bpf* iterator_bpf = _core_iterator_bpfs[cpu_idx];
-
-        if (iterator_bpf == nullptr)
-        {
-            ERROR("Failed to open iterator BPF object for core %ld\n", cpu_idx);
-            exit(EXIT_FAILURE);
-        }
-
-        bpf_map__reuse_fd(iterator_bpf->maps.core_stats_map, bpf_map__fd(_data_bpf->maps.core_stats_map));
-
-        iterator_bpf->rodata->target_cpu_idx = (uint32_t)cpu_idx;
-        iterator_bpf->rodata->verbose        = _options.verbose;
-
-        if (core_iterator_bpf::load(iterator_bpf) != 0)
-        {
-            ERROR("Failed to load iterator BPF object for core %ld\n", cpu_idx);
-            exit(EXIT_FAILURE);
-        }
-
-        union bpf_iter_link_info linfo = {};
-        linfo.map.map_fd = (uint32_t)bpf_map__fd(_data_bpf->maps.core_stats_map);
-
-        LIBBPF_OPTS(bpf_iter_attach_opts, attach_opts,
-            .link_info     = &linfo,
-            .link_info_len = sizeof(linfo),
-        );
-
-        struct bpf_link* link = bpf_program__attach_iter(
-            iterator_bpf->progs.dump_counters, &attach_opts);
-        if (link == nullptr)
-        {
-            ERROR("Failed to attach iterator for core %ld\n", cpu_idx);
-            exit(EXIT_FAILURE);
-        }
-
-        char file_path[64];
-        snprintf(file_path, sizeof(file_path), "/sys/fs/bpf/ebpf_probe/core/%ld", cpu_idx);
-
-        if (bpf_link__pin(link, file_path) != 0)
-        {
-            ERROR("Failed to pin iterator link for core %ld\n", cpu_idx);
-            bpf_link__destroy(link);
-            exit(EXIT_FAILURE);
-        }
-
-        _core_iterator_links.push_back(link);
     }
 }
 

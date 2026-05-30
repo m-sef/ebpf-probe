@@ -37,10 +37,12 @@ private:
     void _attach_tc(const std::string& interface_name);
     void _attach_timer(int sample_frequency);
 
-    void _init_perf_event_map();
-    void _init_rapl_event_map();
+    bool _is_core_online(size_t cpu_idx);
+    void _init_core(size_t cpu_idx);
+    void _init_perf_event_map_for_core(size_t cpu_idx);
+    void _init_iterator_for_core(size_t cpu_idx);
 
-    void _init_core_iterators();
+    void _init_rapl_event_map();
     void _init_rapl_iterators();
 
     const struct options _options;
