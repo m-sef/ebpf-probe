@@ -100,6 +100,22 @@ UserspaceLoader::UserspaceLoader(
 
 UserspaceLoader::~UserspaceLoader()
 {
+    /* int tc_ifindex = if_nametoindex(_options.interface_name.c_str());
+    if (tc_ifindex)
+    {
+        LIBBPF_OPTS(bpf_tc_hook, hook,
+            .ifindex      = tc_ifindex,
+            .attach_point = BPF_TC_EGRESS,
+        );
+        LIBBPF_OPTS(bpf_tc_opts, opts,
+            .handle   = 1,
+            .priority = 1,
+        );
+        bpf_tc_detach(&hook, &opts);
+        hook.attach_point = (bpf_tc_attach_point)(BPF_TC_INGRESS | BPF_TC_EGRESS);
+        bpf_tc_hook_destroy(&hook);
+    } */
+
     for (bpf_link* link : _timer_links)
         bpf_link__destroy(link);
 
@@ -154,7 +170,7 @@ void UserspaceLoader::init()
     _init_rapl_iterators();
 
     _attach_xdp(_options.interface_name);
-    _attach_tc(_options.interface_name);
+    //_attach_tc(_options.interface_name);
     _attach_timer(_options.sample_frequency);
 
     INFO("ebpf-probe started successfully\n");
