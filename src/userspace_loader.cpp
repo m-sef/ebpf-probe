@@ -247,6 +247,31 @@ void UserspaceLoader::_attach_tc(const std::string& interface_name)
         ERROR("Could not find interface \"%s\"\n", interface_name.c_str());
         exit(EXIT_FAILURE);
     }
+
+    LIBBPF_OPTS(bpf_tc_hook, hook,
+        .ifindex  = interface_index,
+        .attach_point = BPF_TC_EGRESS,
+    );
+
+    int error = bpf_tc_hook_create(&hook);
+    if (error && error != -EEXIST)
+    {
+        ERROR("Failed to create TC hook on interface \"%s\"", interface_name.c_str());
+        exit(EXIT_FAILURE);
+    }
+
+    LIBBPF_OPTS(bpf_tc_opts, opts,
+        .prog_fd  = bpf_program__fd(_data_bpf->progs.tc_egress),
+        .handle   = 1,
+        .priority = 1,
+    );
+
+    error = bpf_tc_attach(&hook, &opts);
+    if (error)
+    {
+        ERROR("Failed to attach BPF Program to TC egress hook\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 static inline long
