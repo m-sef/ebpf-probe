@@ -20,6 +20,8 @@
 and energy (RAPL) collection. Metrics are written to pinned BPF iterator files \
 under /sys/fs/bpf/ebpf_probe/ and can be read with standard shell tools."
 
+#define NAME "ebpf_probe"
+
 static struct options options = {};
 
 static volatile sig_atomic_t running = true;
@@ -33,14 +35,17 @@ handle_signal_interrupt(
 
 int main(int argc, char** argv)
 {
-    CLI::App app{DESCRIPTION, argv[0]};
+    CLI::App app{DESCRIPTION, NAME};
 
     app.add_option("-i,--interface", options.interface_name, 
-        "Listen for network traffic on this interface")->required();
+        "Listen for network traffic on this interface")
+        ->required();
     app.add_option("-f,--frequency", options.sample_frequency,
-        "Sample at this frequency per second for each CPU (default: 1)")->default_val(1);
+        "Sample at this frequency per second for each CPU")
+        ->default_val(1);
     app.add_flag("-v,--verbose", options.verbose,
-        "Verbose output (default: false)")->default_val(false);
+        "Enable verbose output")
+        ->default_val(false);
     
     CLI11_PARSE(app, argc, argv);
 
