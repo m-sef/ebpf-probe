@@ -22,7 +22,6 @@
 #include "data.skel.h"
 #include "core_iterator.skel.h"
 #include "rapl_iterator.skel.h"
-#include "rapl_helpers.hpp"
 #include "definitions.hpp"
 #include "bpf_definitions.h"
 #include "userspace_loader.hpp"
@@ -30,70 +29,12 @@
 #define ROOT_PRIVILEGES 0
 
 #define FOREACH_CPU(i) for (size_t i = 0; i < _cpu_count; i++)
-#define FOREACH_PERF_EVENT(i) for (size_t i = 0; i < NUM_EVENT_TYPES; i++)
-#define FOREACH_RAPL_DOMAIN(i) for (size_t i = 0; i < RAPL_DOMAINS_MAX; i++)
-
-#define INFOV(message, ...) \
-do { \
-    if (_options.verbose) \
-    { \
-        fprintf(stdout, "[INFO] "); \
-        fprintf(stdout, message, ##__VA_ARGS__); \
-    } \
-} while (0)
-
-#define WARNINGV(message, ...) \
-do { \
-    if (_options.verbose) \
-    { \
-        fprintf(stderr, "[WARNING] "); \
-        fprintf(stderr, message, ##__VA_ARGS__); \
-    } \
-} while (0)
-
-#define ERRORV(message, ...) \
-do { \
-    if (_options.verbose) { \
-        fprintf(stderr, "[ERROR] "); \
-        fprintf(stderr, message, ##__VA_ARGS__); \
-    } \
-} while (0)
-
-
-static struct perf_event_attr perf_events[] = {
-    [CPU_CYCLES]          = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CPU_CYCLES},
-    [INSTRUCTIONS]        = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_INSTRUCTIONS},
-    [CACHE_REFERENCES]    = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CACHE_REFERENCES},
-    [CACHE_MISSES]        = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CACHE_MISSES},
-    [BRANCH_INSTRUCTIONS] = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_BRANCH_INSTRUCTIONS},
-    [BRANCH_MISSES]       = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_BRANCH_MISSES},
-    [BUS_CYCLES]          = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_BUS_CYCLES},
-    [REF_CPU_CYCLES]      = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_REF_CPU_CYCLES},
-};
-
-static const char* perf_event_names[] = {
-    [CPU_CYCLES]          = "cpu-cycles",
-    [INSTRUCTIONS]        = "instructions",
-    [CACHE_REFERENCES]    = "cache-references",
-    [CACHE_MISSES]        = "cache-misses",
-    [BRANCH_INSTRUCTIONS] = "branch-instructions",
-    [BRANCH_MISSES]       = "branch-misses",
-    [BUS_CYCLES]          = "bus-cycles",
-    [REF_CPU_CYCLES]      = "ref-cycles",
-};
-
-static const char* rapl_domain_names[] = {
-	[RAPL_PKG]    = "pkg",
-	[RAPL_CORE]   = "cores",
-	[RAPL_UNCORE] = "uncore",
-	[RAPL_DRAM]   = "ram",
-	[RAPL_PSYS]   = "psys",
-};
 
 UserspaceLoader::UserspaceLoader(
         const struct options& options)
     : _options(options)
     , _cpu_count(libbpf_num_possible_cpus())
+    , _data(options, libbpf_num_possible_cpus())
 {
 
 }
@@ -109,7 +50,7 @@ UserspaceLoader::~UserspaceLoader()
     for (bpf_link* link : _rapl_iterator_links)
         bpf_link__destroy(link);
 
-    data_bpf::destroy(_data_bpf);
+    //data_bpf::destroy(_data_bpf);
     
     for (core_iterator_bpf* skeleton : _core_iterator_bpfs)
         core_iterator_bpf::destroy(skeleton);
@@ -117,20 +58,17 @@ UserspaceLoader::~UserspaceLoader()
     for (rapl_iterator_bpf* skeleton : _rapl_iterator_bpfs)
         rapl_iterator_bpf::destroy(skeleton);
 
-    _remove_core_files();
-    _remove_rapl_files();
-    _remove_sys_directories();
+    //_remove_core_files();
+    //_remove_rapl_files();
+    //_remove_sys_directories();
 }
 
 void UserspaceLoader::init()
 {
     if (getuid() != ROOT_PRIVILEGES)
-    {
-        ERROR("Program must be run with root privileges\n");
-        exit(EXIT_FAILURE);
-    }
+        ERROR("Program must be run with root privileges");
 
-    _data_bpf = data_bpf::open();
+    /* _data_bpf = data_bpf::open();
     if (_data_bpf == nullptr)
     {
         ERROR("Failed to open BPF object\n");
@@ -157,7 +95,9 @@ void UserspaceLoader::init()
     _attach_tcx(_options.interface_name);
     _attach_timer(_options.sample_frequency);
 
-    INFO("ebpf-probe started successfully\n");
+    */
+
+    INFO("ebpf-probe started successfully");
 }
 
 static inline void
@@ -212,6 +152,7 @@ void UserspaceLoader::_remove_core_files()
     }
 }
 
+/*
 void UserspaceLoader::_remove_rapl_files()
 {
     FOREACH_RAPL_DOMAIN(domain_idx)
@@ -221,90 +162,9 @@ void UserspaceLoader::_remove_rapl_files()
         unlink(file_path);
     }
 }
+*/
 
-void UserspaceLoader::_attach_xdp(const std::string& interface_name)
-{
-    unsigned int interface_index = if_nametoindex(interface_name.c_str());
-    if (!interface_index)
-    {
-        ERROR("Could not find interface \"%s\"\n", interface_name.c_str());
-        exit(EXIT_FAILURE);
-    }
-
-    _data_bpf->links.xdp_ingress = bpf_program__attach_xdp(_data_bpf->progs.xdp_ingress, interface_index);
-    if (!_data_bpf->links.xdp_ingress)
-    {
-        ERROR("Failed to attach BPF program to XDP hook\n");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void UserspaceLoader::_attach_tcx(const std::string& interface_name)
-{
-    int interface_index = if_nametoindex(interface_name.c_str());
-    if (!interface_index)
-    {
-        ERROR("Could not find interface \"%s\"\n", interface_name.c_str());
-        exit(EXIT_FAILURE);
-    }
-
-    _data_bpf->links.tcx_egress = bpf_program__attach_tcx(_data_bpf->progs.tcx_egress, interface_index, NULL);
-    if (!_data_bpf->links.tcx_egress)
-    {
-        ERROR("Failed to attach BPF program to TCX hook\n");
-        exit(EXIT_FAILURE);
-    }
-}
-
-static inline long
-perf_event_open(
-    struct perf_event_attr* hw_event, pid_t pid,
-    int cpu, int group_fd, unsigned long flags)
-{
-    int ret;
-
-    ret = syscall(SYS_perf_event_open, hw_event, pid, cpu, group_fd, flags);
-
-    return ret;
-}
-
-void UserspaceLoader::_attach_timer(int sample_frequency)
-{
-    /* Attaches the Software CPU Clock perf event to the bpf program 'timer' */
-    FOREACH_CPU(cpu_idx)
-    {
-        struct perf_event_attr timer = {};
-        timer.type        = PERF_TYPE_SOFTWARE;
-        timer.config      = PERF_COUNT_SW_CPU_CLOCK;
-        timer.sample_freq = sample_frequency;
-        timer.freq        = 1;
-        
-        fd_t timer_fd = perf_event_open(&timer, -1, cpu_idx, -1, 0);
-        if (timer_fd < 0)
-        {
-            if (errno == ENODEV)
-            {
-                WARNING("CPU %ld is offline, skipping timer attachment\n", cpu_idx);
-                continue;
-            }
-
-            ERROR("Failed to get file descriptor for PERF_COUNT_SW_CPU_CLOCK\n");
-            exit(EXIT_FAILURE);
-        }
-        
-        struct bpf_link* link = bpf_program__attach_perf_event(
-            _data_bpf->progs.timer, timer_fd);
-        if (!link)
-        {
-            ERROR("Failed to attach BPF program to perf hook\n");
-            exit(EXIT_FAILURE);
-        }
-
-        _timer_links.push_back(link);
-        close(timer_fd);
-    }
-}
-
+/*
 bool UserspaceLoader::_is_core_online(size_t cpu_idx)
 {
     char path[64];
@@ -312,7 +172,7 @@ bool UserspaceLoader::_is_core_online(size_t cpu_idx)
     FILE* file = fopen(path, "r");
     if (!file)
     {
-        /* All CPUs, with the exception of cpu 0, have an 'online' file */
+        // All CPUs, with the exception of cpu 0, have an 'online' file
         return true;
     }
     
@@ -326,48 +186,25 @@ bool UserspaceLoader::_is_core_online(size_t cpu_idx)
     fclose(file);
     return (value == 1);
 }
+*/
 
+/*
 void UserspaceLoader::_init_core(size_t cpu_idx)
 {
-    /* If a core is offline, warn the user and move on */
+    // If a core is offline, warn the user and move on
     if (!_is_core_online(cpu_idx))
     {
-        WARNINGV("CPU %ld is offline\n", cpu_idx);
+        WARNINGV(_options, "CPU %ld is offline\n", cpu_idx);
         return;
     }
 
-    /* Populate the BPF map which stores perf file descriptors */
+    // Populate the BPF map which stores perf file descriptors
     _init_perf_event_map_for_core(cpu_idx);
 
-    /* Create files under the /sys/fs/bpf/ebpf_probe/core directory and attach 
-       Their associated iterators */
+    // Create files under the /sys/fs/bpf/ebpf_probe/core directory and attach Their associated iterators
     _init_iterator_for_core(cpu_idx);
 }
-
-void UserspaceLoader::_init_perf_event_map_for_core(size_t cpu_idx)
-{
-    fd_t perf_event_map_fd = bpf_map__fd(_data_bpf->maps.perf_event_map);
-
-    FOREACH_PERF_EVENT(perf_event_idx)
-    {
-        /* Attempt to open file descriptor for perf event, if it is not available
-           then warn the user. If it is available, add it to the BPF perf event map */
-        fd_t perf_event_fd = perf_event_open(&perf_events[perf_event_idx], -1, cpu_idx, -1, 0);
-        if (perf_event_fd < 0)
-        {
-            WARNINGV("Failed to get file descriptor for perf event '%s' on core %ld, likely not available on this system\n",
-                perf_event_names[perf_event_idx], cpu_idx);
-            continue;
-        }
-
-        __u32 key = (cpu_idx * NUM_EVENT_TYPES) + perf_event_idx;
-        bpf_map_update_elem(perf_event_map_fd, &key, &perf_event_fd, BPF_ANY);
-
-        close(perf_event_fd);
-    }
-
-    INFOV("Successfully populated BPF perf event map for core %ld\n", cpu_idx);
-}
+*/
 
 void UserspaceLoader::_init_iterator_for_core(size_t cpu_idx)
 {
@@ -382,7 +219,7 @@ void UserspaceLoader::_init_iterator_for_core(size_t cpu_idx)
         exit(EXIT_FAILURE);
     }
 
-    bpf_map__reuse_fd(iterator_bpf->maps.core_stats_map, bpf_map__fd(_data_bpf->maps.core_stats_map));
+    //bpf_map__reuse_fd(iterator_bpf->maps.core_stats_map, bpf_map__fd(_data_bpf->maps.core_stats_map));
 
     iterator_bpf->rodata->target_cpu_idx = (uint32_t)cpu_idx;
     iterator_bpf->rodata->verbose        = _options.verbose;
@@ -421,50 +258,10 @@ void UserspaceLoader::_init_iterator_for_core(size_t cpu_idx)
 
     _core_iterator_links.push_back(link);
 
-    INFOV("Successfuly initialized iterator for core %ld\n", cpu_idx);
+    INFOV(_options, "Successfuly initialized iterator for core %ld\n", cpu_idx);
 }
 
-void UserspaceLoader::_init_rapl_event_map()
-{
-    fd_t rapl_map_fd = bpf_map__fd(_data_bpf->maps.rapl_event_map);
-
-    int rapl_type = read_rapl_type();
-    if (rapl_type < 0)
-    {
-        ERROR("RAPL is not available on this system\n");
-        exit(EXIT_FAILURE);
-    }
-
-    FOREACH_RAPL_DOMAIN(domain_idx)
-    {
-        int rapl_config = read_rapl_config(rapl_domain_names[domain_idx]);
-        if (rapl_config < 0)
-        {
-            WARNING("RAPL domain '%s' not found on this system\n",
-                rapl_domain_names[domain_idx]);
-            continue;
-        }
-
-        struct perf_event_attr rapl_event = {};
-        rapl_event.type   = rapl_type;
-        rapl_event.size   = sizeof(struct perf_event_attr);
-        rapl_event.config = rapl_config;
-
-        fd_t rapl_event_fd = perf_event_open(&rapl_event, -1, 0, -1, 0);
-        if (rapl_event_fd < 0)
-        {
-            WARNING("Failed to get file descriptor for RAPL domain '%s'\n",
-                rapl_domain_names[domain_idx]);
-            continue;
-        }
-
-        __u32 key = domain_idx;
-        bpf_map_update_elem(rapl_map_fd, &key, &rapl_event_fd, BPF_ANY);
-
-        close(rapl_event_fd);
-    }
-}
-
+/*
 void UserspaceLoader::_init_rapl_iterators()
 {
     _rapl_iterator_bpfs = std::vector<struct rapl_iterator_bpf*>(RAPL_DOMAINS_MAX);
@@ -480,7 +277,7 @@ void UserspaceLoader::_init_rapl_iterators()
             exit(EXIT_FAILURE);
         }
 
-        bpf_map__reuse_fd(iterator_bpf->maps.rapl_stats_map, bpf_map__fd(_data_bpf->maps.rapl_stats_map));
+        //bpf_map__reuse_fd(iterator_bpf->maps.rapl_stats_map, bpf_map__fd(_data_bpf->maps.rapl_stats_map));
 
         iterator_bpf->rodata->target_rapl_domain_idx = (uint32_t)domain_idx;
         iterator_bpf->rodata->verbose                = _options.verbose;
@@ -523,3 +320,4 @@ void UserspaceLoader::_init_rapl_iterators()
         _rapl_iterator_links.push_back(link);
     }
 }
+*/

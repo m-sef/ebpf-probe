@@ -10,6 +10,23 @@
 #include <stdio.h>
 #include <string.h>
 
+enum rapl_domains {
+    RAPL_PKG    = 0,
+    RAPL_CORE   = 1,
+    RAPL_UNCORE = 2,
+    RAPL_DRAM   = 3,
+    RAPL_PSYS   = 4,
+    RAPL_DOMAINS_MAX,
+};
+
+static const char* rapl_domain_names[] = {
+	[RAPL_PKG]    = "pkg",
+	[RAPL_CORE]   = "cores",
+	[RAPL_UNCORE] = "uncore",
+	[RAPL_DRAM]   = "ram",
+	[RAPL_PSYS]   = "psys",
+};
+
 int
 read_rapl_type()
 {

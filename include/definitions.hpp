@@ -6,32 +6,48 @@
 #ifndef COMMON_DEFINITIONS_H
 #define COMMON_DEFINITIONS_H
 
+#include <iostream>
 #include <string>
+#include <stdexcept>
+#include <format>
 
-#define LENGTH_OF(a) (sizeof(a) / sizeof((a)[0]))
+#define INFO_PREFIX "[INFO] "
+#define WARNING_PREFIX "[WARNING] "
 
 #define INFO(message, ...) \
 do { \
-    fprintf(stdout, "[INFO] "); \
-    fprintf(stdout, message, ##__VA_ARGS__); \
+    std::cout << INFO_PREFIX << std::format(message, ##__VA_ARGS__) << std::endl; \
 } while (0)
+
+#define INFOV(options, message, ...) \
+do { \
+    if (options.verbose) \
+        std::cout << INFO_PREFIX << std::format(message, ##__VA_ARGS__) << std::endl; \
+} while(0)
 
 #define WARNING(message, ...) \
 do { \
-    fprintf(stderr, "[WARNING] "); \
-    fprintf(stderr, message, ##__VA_ARGS__); \
+    std::cout << WARNING_PREFIX << std::format(message, ##__VA_ARGS__) << std::endl; \
 } while (0)
+
+#define WARNINGV(options, message, ...) \
+do { \
+    if (options.verbose) \
+        std::cout << WARNING_PREFIX << std::format(message, ##__VA_ARGS__) << std::endl; \
+} while(0)
 
 #define ERROR(message, ...) \
 do { \
-    fprintf(stderr, "[ERROR] "); \
-    fprintf(stderr, message, ##__VA_ARGS__); \
-} while (0)
+    throw std::runtime_error(std::format(message, ##__VA_ARGS__)); \
+} while(0)
 
 typedef struct options {
     std::string interface_name; /* Listen for packets on this network interface */
     int sample_frequency;
     bool verbose;
 } options_t;
+
+typedef int fd_t;
+typedef unsigned int cpu_t;
 
 #endif

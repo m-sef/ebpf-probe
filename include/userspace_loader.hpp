@@ -13,6 +13,7 @@
 #include "data.skel.h"
 #include "core_iterator.skel.h"
 #include "rapl_iterator.skel.h"
+#include "data_bpf.hpp"
 #include "definitions.hpp"
 
 class UserspaceLoader
@@ -62,8 +63,8 @@ private:
     // TODO: Change _cpu to a consistent type across all programs? (Ideally int or unsigned int?)
     // UserspaceLoader will remain responsible for populating perf_event_map, and rapl_event_map on a per-core/per-domain basis
 
-    // /* DataBPF(const options_t& options) Example constructor call */
-    //DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs */
+    /* DataBPF(const options_t& options) Example constructor call */
+    DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs */
 
     // /* CoreIteratorBPF(const options_t& options, int cpu) Example constructor call */
     //std::vector<CoreIteratorBPF> _core_iterators; /* Handles per-core iterator BPF programs */

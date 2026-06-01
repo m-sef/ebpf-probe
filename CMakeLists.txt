@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.28.3)
 project(ebpf_probe)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(VMLINUX_HEADER ${CMAKE_SOURCE_DIR}/include/vmlinux.h)
 
 set(BPF_DATA_SOURCE ${CMAKE_SOURCE_DIR}/src/data.bpf.c)
@@ -104,7 +107,8 @@ add_dependencies(bpf_rapl_iter_skeleton bpf_rapl_iter_object)
 add_executable(
     ebpf_probe
     src/main.cpp
-    src/userspace_loader.cpp)
+    src/userspace_loader.cpp
+    src/data_bpf.cpp)
 target_include_directories(ebpf_probe PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(ebpf_probe PRIVATE bpf)
 target_compile_options(ebpf_probe PRIVATE -O3 -Wall -Werror)

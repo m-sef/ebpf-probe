@@ -18,6 +18,7 @@ public:
     CoreIteratorBPF(const options_t& options, unsigned int cpu);
 private:
     void _init();
+    void _create_and_link_pinned_file();
 
     const options_t& _options;
 
