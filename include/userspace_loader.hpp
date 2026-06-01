@@ -34,7 +34,7 @@ private:
     void _remove_rapl_files();
 
     void _attach_xdp(const std::string& interface_name);
-    void _attach_tc(const std::string& interface_name);
+    void _attach_tcx(const std::string& interface_name);
     void _attach_timer(int sample_frequency);
 
     bool _is_core_online(size_t cpu_idx);

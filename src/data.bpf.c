@@ -10,8 +10,6 @@
 #include <bpf_definitions.h>
 #include <bpf_shared_maps.h>
 
-#define TC_ACT_OK 0
-
 static inline void
 increment_core_stats_rx_counters(
         __u64 rx_packets,
@@ -51,15 +49,15 @@ int xdp_ingress(struct xdp_md* context)
     return XDP_PASS;
 }
 
-SEC("tc")
-int tc_egress(struct __sk_buff* context)
+SEC("tcx/egress")
+int tcx_egress(struct __sk_buff* context)
 {
     void* data_end = (void *)(__u64)context->data_end;
     void* data     = (void *)(__u64)context->data;
 
     increment_core_stats_tx_counters(1, data_end - data);
 
-    return TC_ACT_OK;
+    return TCX_PASS;
 }
 
 static inline error_t

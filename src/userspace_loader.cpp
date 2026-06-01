@@ -100,22 +100,6 @@ UserspaceLoader::UserspaceLoader(
 
 UserspaceLoader::~UserspaceLoader()
 {
-    /* int tc_ifindex = if_nametoindex(_options.interface_name.c_str());
-    if (tc_ifindex)
-    {
-        LIBBPF_OPTS(bpf_tc_hook, hook,
-            .ifindex      = tc_ifindex,
-            .attach_point = BPF_TC_EGRESS,
-        );
-        LIBBPF_OPTS(bpf_tc_opts, opts,
-            .handle   = 1,
-            .priority = 1,
-        );
-        bpf_tc_detach(&hook, &opts);
-        hook.attach_point = (bpf_tc_attach_point)(BPF_TC_INGRESS | BPF_TC_EGRESS);
-        bpf_tc_hook_destroy(&hook);
-    } */
-
     for (bpf_link* link : _timer_links)
         bpf_link__destroy(link);
 
@@ -170,7 +154,7 @@ void UserspaceLoader::init()
     _init_rapl_iterators();
 
     _attach_xdp(_options.interface_name);
-    //_attach_tc(_options.interface_name);
+    _attach_tcx(_options.interface_name);
     _attach_timer(_options.sample_frequency);
 
     INFO("ebpf-probe started successfully\n");
@@ -255,7 +239,7 @@ void UserspaceLoader::_attach_xdp(const std::string& interface_name)
     }
 }
 
-void UserspaceLoader::_attach_tc(const std::string& interface_name)
+void UserspaceLoader::_attach_tcx(const std::string& interface_name)
 {
     int interface_index = if_nametoindex(interface_name.c_str());
     if (!interface_index)
@@ -264,28 +248,10 @@ void UserspaceLoader::_attach_tc(const std::string& interface_name)
         exit(EXIT_FAILURE);
     }
 
-    LIBBPF_OPTS(bpf_tc_hook, hook,
-        .ifindex  = interface_index,
-        .attach_point = BPF_TC_EGRESS,
-    );
-
-    int error = bpf_tc_hook_create(&hook);
-    if (error && error != -EEXIST)
+    _data_bpf->links.tcx_egress = bpf_program__attach_tcx(_data_bpf->progs.tcx_egress, interface_index, NULL);
+    if (!_data_bpf->links.tcx_egress)
     {
-        ERROR("Failed to create TC hook on interface \"%s\"", interface_name.c_str());
-        exit(EXIT_FAILURE);
-    }
-
-    LIBBPF_OPTS(bpf_tc_opts, opts,
-        .prog_fd  = bpf_program__fd(_data_bpf->progs.tc_egress),
-        .handle   = 1,
-        .priority = 1,
-    );
-
-    error = bpf_tc_attach(&hook, &opts);
-    if (error)
-    {
-        ERROR("Failed to attach BPF Program to TC egress hook\n");
+        ERROR("Failed to attach BPF program to TCX hook\n");
         exit(EXIT_FAILURE);
     }
 }
