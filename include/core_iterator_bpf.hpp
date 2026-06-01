@@ -1,6 +1,7 @@
 /**
  * @file core_iterator_bpf.hpp
  * @author Seth Moore (slmoore@hamilton.edu)
+ * @brief Handles per-core iterator BPF programs, as well as pinning their corresponding file
  * 
  */
 #ifndef CORE_ITERATOR_BPF_H

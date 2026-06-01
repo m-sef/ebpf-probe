@@ -1,6 +1,7 @@
 /**
  * @file rapl_iterator_bpf.hpp
  * @author Seth Moore (slmoore@hamilton.edu)
+ * @brief Handles per-domain iterator BPF programs, as well as pinning their corresponding file
  * 
  */
 #ifndef RAPL_ITERATOR_BPF_H

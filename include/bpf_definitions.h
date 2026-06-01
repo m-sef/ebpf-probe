@@ -1,6 +1,7 @@
 /**
  * @file bpf_definitions.h
  * @author Seth Moore (slmoore@hamilton.edu)
+ * @brief Important BPF-related definitions which are safe to include in both BPF and normal userspace programs
  * 
  */
 #ifndef BPF_DEFINITIONS_H
