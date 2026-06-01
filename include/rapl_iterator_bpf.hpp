@@ -17,8 +17,13 @@ class RAPLIteratorBPF
 public:
     RAPLIteratorBPF(const options_t& options, unsigned int domain);
 private:
+    void _init();
+
+    const options_t& _options;
+
     std::unique_ptr<rapl_iterator_bpf, decltype(&rapl_iterator_bpf__destroy)> _bpf;
     std::unique_ptr<bpf_link, decltype(&bpf_link__destroy)> _link;
+    std::string _pinned_file_path;
 };
 
 #endif

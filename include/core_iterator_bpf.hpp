@@ -17,8 +17,13 @@ class CoreIteratorBPF
 public:
     CoreIteratorBPF(const options_t& options, unsigned int cpu);
 private:
+    void _init();
+
+    const options_t& _options;
+
     std::unique_ptr<core_iterator_bpf, decltype(&core_iterator_bpf__destroy)> _bpf;
     std::unique_ptr<bpf_link, decltype(&bpf_link__destroy)> _link;
+    std::string _pinned_file_path;
 };
 
 #endif
