@@ -58,8 +58,17 @@ private:
 
     // For potential future refactor
     // TODO: Encapsulate all BPF programs in their own classes which appropriately handle destructors on std::runtime_error
-    //DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs, as well as populating perf_event_map and rapl_event_map */
+    // TODO: Change all ERROR call sites to instead throw std::runtime_error
+    // TODO: Change _cpu to a consistent type across all programs? (Ideally int or unsigned int?)
+    // UserspaceLoader will remain responsible for populating perf_event_map, and rapl_event_map on a per-core/per-domain basis
+
+    // /* DataBPF(const options_t& options) Example constructor call */
+    //DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs */
+
+    // /* CoreIteratorBPF(const options_t& options, int cpu) Example constructor call */
     //std::vector<CoreIteratorBPF> _core_iterators; /* Handles per-core iterator BPF programs */
+
+    // /* RAPLIteratorBPF(const options_t& options, int domain) Example constructor call */
     //std::vector<RAPLIteratorBPF> _rapl_iterators; /* Handles per-RAPL domain iterator BPF programs */
 };
 
