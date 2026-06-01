@@ -52,8 +52,8 @@ int xdp_ingress(struct xdp_md* context)
 SEC("tcx/egress")
 int tcx_egress(struct __sk_buff* context)
 {
-    void* data_end = (void *)(__u64)context->data_end;
     void* data     = (void *)(__u64)context->data;
+    void* data_end = (void *)(__u64)context->data_end;
 
     increment_core_stats_tx_counters(1, data_end - data);
 
