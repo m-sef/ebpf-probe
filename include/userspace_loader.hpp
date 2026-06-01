@@ -55,6 +55,12 @@ private:
     std::vector<bpf_link*> _timer_links;
     std::vector<bpf_link*> _core_iterator_links;
     std::vector<bpf_link*> _rapl_iterator_links;
+
+    // For potential future refactor
+    // TODO: Encapsulate all BPF programs in their own classes which appropriately handle destructors on std::runtime_error
+    //DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs, as well as populating perf_event_map and rapl_event_map */
+    //std::vector<CoreIteratorBPF> _core_iterators; /* Handles per-core iterator BPF programs */
+    //std::vector<RAPLIteratorBPF> _rapl_iterators; /* Handles per-RAPL domain iterator BPF programs */
 };
 
 #endif
