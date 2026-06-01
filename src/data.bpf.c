@@ -91,10 +91,6 @@ read_rapl_domain_counter(
 }
 
 SEC("perf_event")
-/**
- * @brief Attached to Software CPU Clock perf event, triggers every 1Hz
- * 
- */
 int timer(struct bpf_perf_event_data* ctx)
 {
     __u32 cpu_idx = bpf_get_smp_processor_id();
