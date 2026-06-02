@@ -24,8 +24,8 @@ void CoreIteratorBPF::init()
     if (_bpf == nullptr)
         ERROR("Failed to open iterator BPF object for CPU {}", _cpu);
     
-    _bpf->rodata->target_cpu_idx = (__u32)_cpu;
-    _bpf->rodata->verbose        = _options.verbose;
+    _bpf->rodata->cpu     = (__u32)_cpu;
+    _bpf->rodata->verbose = _options.verbose;
 
     if (core_iterator_bpf__load(_bpf.get()) != 0)
         ERROR("Failed to load iterator BPF object for CPU {}", _cpu);
