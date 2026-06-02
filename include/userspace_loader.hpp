@@ -14,6 +14,8 @@
 #include "core_iterator.skel.h"
 #include "rapl_iterator.skel.h"
 #include "data_bpf.hpp"
+#include "core_iterator_bpf.hpp"
+#include "rapl_iterator_bpf.hpp"
 #include "definitions.hpp"
 
 class UserspaceLoader
@@ -22,12 +24,12 @@ public:
     UserspaceLoader(const struct options& options);
     ~UserspaceLoader();
 
-    void init();
-
     UserspaceLoader(const UserspaceLoader& other) = delete;
     UserspaceLoader& operator=(const UserspaceLoader& other) = delete;
     UserspaceLoader(UserspaceLoader&& other) = delete;
     UserspaceLoader& operator=(UserspaceLoader&& other) = delete;
+
+    void init();
 private:
     void _create_sys_directories();
     void _remove_sys_directories();
@@ -67,10 +69,10 @@ private:
     DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs */
 
     // /* CoreIteratorBPF(const options_t& options, int cpu) Example constructor call */
-    //std::vector<CoreIteratorBPF> _core_iterators; /* Handles per-core iterator BPF programs */
+    std::vector<CoreIteratorBPF> _core_iterators; /* Handles per-core iterator BPF programs */
 
     // /* RAPLIteratorBPF(const options_t& options, int domain) Example constructor call */
-    //std::vector<RAPLIteratorBPF> _rapl_iterators; /* Handles per-RAPL domain iterator BPF programs */
+    std::vector<RAPLIteratorBPF> _rapl_iterators; /* Handles per-RAPL domain iterator BPF programs */
 };
 
 #endif

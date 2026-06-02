@@ -7,6 +7,7 @@
 #ifndef RAPL_ITERATOR_BPF_H
 #define RAPL_ITERATOR_BPF_H
 
+#include <string>
 #include <memory>
 
 #include "rapl_iterator.skel.h"
@@ -16,10 +17,17 @@ class RAPLIteratorBPF
 {
 public:
     RAPLIteratorBPF(const options_t& options, unsigned int domain);
-private:
-    void _init();
+    ~RAPLIteratorBPF();
 
+    void init();
+
+    RAPLIteratorBPF(const RAPLIteratorBPF&) = delete;
+    RAPLIteratorBPF& operator=(const RAPLIteratorBPF&) = delete;
+    RAPLIteratorBPF(RAPLIteratorBPF&&) = default;
+    RAPLIteratorBPF& operator=(RAPLIteratorBPF&&) = default;
+private:
     const options_t& _options;
+    const unsigned int _domain;
 
     std::unique_ptr<rapl_iterator_bpf, decltype(&rapl_iterator_bpf__destroy)> _bpf;
     std::unique_ptr<bpf_link, decltype(&bpf_link__destroy)> _link;

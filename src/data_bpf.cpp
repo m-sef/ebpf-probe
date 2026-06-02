@@ -15,14 +15,15 @@ DataBPF::DataBPF(
         unsigned int cpu_count)
     : _options(options)
     , _cpu_count(cpu_count)
-    , _bpf(data_bpf::open(), &data_bpf__destroy)
+    , _bpf(nullptr, &data_bpf__destroy)
 {
-    _init();
+
 }
 
 void
-DataBPF::_init()
+DataBPF::init()
 {
+    _bpf.reset(data_bpf__open());
     if (_bpf == nullptr)
         ERROR("Failed to open BPF object");
     
@@ -42,7 +43,7 @@ DataBPF::_init()
 
     _populate_rapl_event_map();
 
-    INFOV(_options, "Finished initializing DataBPF object...");
+    INFOV(_options, "Successfully initialized DataBPF object...");
 }
 
 void

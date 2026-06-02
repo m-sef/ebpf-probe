@@ -29,44 +29,42 @@
 #define ROOT_PRIVILEGES 0
 
 #define FOREACH_CPU(i) for (size_t i = 0; i < _cpu_count; i++)
+#define FOREACH_RAPL_DOMAIN(i) for (size_t i = 0; i < RAPL_DOMAINS_MAX; i++)
 
 UserspaceLoader::UserspaceLoader(
         const struct options& options)
     : _options(options)
     , _cpu_count(libbpf_num_possible_cpus())
-    , _data(options, libbpf_num_possible_cpus())
+    , _data(_options, _cpu_count)
 {
-
+    _core_iterators.reserve(_cpu_count);
+    FOREACH_CPU(cpu)
+        _core_iterators.emplace_back(_options, cpu);
+    
+    _rapl_iterators.reserve(RAPL_DOMAINS_MAX);
+    FOREACH_RAPL_DOMAIN(domain)
+        _rapl_iterators.emplace_back(_options, domain);
 }
 
 UserspaceLoader::~UserspaceLoader()
 {
-    for (bpf_link* link : _timer_links)
-        bpf_link__destroy(link);
-
-    for (bpf_link* link : _core_iterator_links)
-        bpf_link__destroy(link);
-    
-    for (bpf_link* link : _rapl_iterator_links)
-        bpf_link__destroy(link);
-
-    //data_bpf::destroy(_data_bpf);
-    
-    for (core_iterator_bpf* skeleton : _core_iterator_bpfs)
-        core_iterator_bpf::destroy(skeleton);
-    
-    for (rapl_iterator_bpf* skeleton : _rapl_iterator_bpfs)
-        rapl_iterator_bpf::destroy(skeleton);
-
-    //_remove_core_files();
-    //_remove_rapl_files();
-    //_remove_sys_directories();
+    _remove_sys_directories();
 }
 
 void UserspaceLoader::init()
 {
     if (getuid() != ROOT_PRIVILEGES)
         ERROR("Program must be run with root privileges");
+    
+    _create_sys_directories();
+
+    _data.init();
+
+    FOREACH_CPU(cpu)
+        _core_iterators[cpu].init();
+    
+    FOREACH_RAPL_DOMAIN(domain)
+        _rapl_iterators[domain].init();
 
     /* _data_bpf = data_bpf::open();
     if (_data_bpf == nullptr)
@@ -110,15 +108,15 @@ make_directory(
         switch (errno)
         {
         case EEXIST:
-            WARNING("Failed to make directory %s, already exists.\n", directory_path.c_str());
+            WARNING("Failed to make directory {}, already exists.", directory_path);
             break;
         
         case EACCES:
-            ERROR("Failed to make directory %s, permission denied.\n", directory_path.c_str());
+            ERROR("Failed to make directory {}, permission denied.", directory_path);
             exit(EXIT_FAILURE);
         
         case ENOENT:
-            ERROR("Failed to make directory %s, parent directory does not exist.\n", directory_path.c_str());
+            ERROR("Failed to make directory {}, parent directory does not exist.", directory_path);
             exit(EXIT_FAILURE);
         
         default:
@@ -258,7 +256,7 @@ void UserspaceLoader::_init_iterator_for_core(size_t cpu_idx)
 
     _core_iterator_links.push_back(link);
 
-    INFOV(_options, "Successfuly initialized iterator for core %ld\n", cpu_idx);
+    INFOV(_options, "Successfully initialized iterator for core %ld\n", cpu_idx);
 }
 
 /*

@@ -27,7 +27,7 @@ static const char* rapl_domain_names[] = {
 	[RAPL_PSYS]   = "psys",
 };
 
-int
+inline int
 read_rapl_type()
 {
 	FILE* file;
@@ -47,7 +47,7 @@ read_rapl_type()
 	return type;
 }
 
-int
+inline int
 read_rapl_config(
         const char* domain)
 {
@@ -75,7 +75,7 @@ read_rapl_config(
 	return config;
 }
 
-int
+inline int
 read_rapl_unit(
 		const char* domain,
 		char* buffer,
@@ -100,7 +100,7 @@ read_rapl_unit(
 	return 0;
 }
 
-int
+inline int
 read_rapl_scale(
 		const char* domain,
 		char* buffer,

@@ -20,8 +20,9 @@ class DataBPF
 {
 public:
     DataBPF(const options_t& options, unsigned int cpu_count);
+
+    void init();
 private:
-    void _init();
     void _populate_perf_event_map() const;
     void _populate_perf_event_map_for_cpu(unsigned int cpu) const;
     void _populate_rapl_event_map() const;
@@ -32,8 +33,8 @@ private:
 
     const options_t& _options;
     const unsigned int _cpu_count;
-    const std::unique_ptr<struct data_bpf, decltype(&data_bpf__destroy)> _bpf;
-
+    
+    std::unique_ptr<struct data_bpf, decltype(&data_bpf__destroy)> _bpf;
     std::vector<std::unique_ptr<struct bpf_link, decltype(&bpf_link__destroy)>> _timer_links;
 };
 
