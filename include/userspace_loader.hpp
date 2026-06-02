@@ -10,9 +10,6 @@
 #include <vector>
 #include <memory>
 
-#include "data.skel.h"
-#include "core_iterator.skel.h"
-#include "rapl_iterator.skel.h"
 #include "data_bpf.hpp"
 #include "core_iterator_bpf.hpp"
 #include "rapl_iterator_bpf.hpp"
@@ -34,10 +31,10 @@ private:
     void _create_sys_directories();
     void _remove_sys_directories();
 
-    bool _is_core_online(size_t cpu_idx);
+    bool _is_core_online(unsigned int cpu);
 
     const struct options _options;
-    const __u32 _cpu_count;
+    const unsigned int _cpu_count;
 
     DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs. Also populates perf and rapl event maps */
     std::vector<CoreIteratorBPF> _core_iterators; /* Handles per-core iterator BPF programs */

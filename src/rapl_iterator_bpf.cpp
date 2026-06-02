@@ -26,8 +26,7 @@ void RAPLIteratorBPF::init()
     if (_bpf == nullptr)
         ERROR("Failed to open iterator BPF object for domain {}", _domain);
     
-    _bpf->rodata->target_rapl_domain_idx = (__u32)_domain;
-    _bpf->rodata->verbose                = _options.verbose;
+    _bpf->rodata->domain = (__u32)_domain;
     strncpy(_bpf->rodata->rapl_domain_name, rapl_domain_names[_domain], sizeof(_bpf->rodata->rapl_domain_name) - 1);
     read_rapl_unit(rapl_domain_names[_domain], _bpf->rodata->unit, sizeof(_bpf->rodata->unit));
     read_rapl_scale(rapl_domain_names[_domain], _bpf->rodata->scale, sizeof(_bpf->rodata->scale));

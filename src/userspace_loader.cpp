@@ -28,7 +28,7 @@
 
 #define ROOT_PRIVILEGES 0
 
-#define FOREACH_CPU(i) for (size_t i = 0; i < _cpu_count; i++)
+#define FOREACH_CPU(cpu) for (unsigned int cpu = 0; cpu < _cpu_count; cpu++)
 #define FOREACH_RAPL_DOMAIN(i) for (size_t i = 0; i < RAPL_DOMAINS_MAX; i++)
 
 UserspaceLoader::UserspaceLoader(
@@ -51,7 +51,8 @@ UserspaceLoader::~UserspaceLoader()
     _remove_sys_directories();
 }
 
-void UserspaceLoader::init()
+void
+UserspaceLoader::init()
 {
     if (getuid() != ROOT_PRIVILEGES)
         ERROR("Program must be run with root privileges");
@@ -98,24 +99,28 @@ make_directory(
     }
 }
 
-void UserspaceLoader::_create_sys_directories()
+void
+UserspaceLoader::_create_sys_directories()
 {
     make_directory("/sys/fs/bpf/ebpf_probe",      0x700);
     make_directory("/sys/fs/bpf/ebpf_probe/core", 0x700);
     make_directory("/sys/fs/bpf/ebpf_probe/rapl", 0x700);
 }
 
-void UserspaceLoader::_remove_sys_directories()
+void
+UserspaceLoader::_remove_sys_directories()
 {
     rmdir("/sys/fs/bpf/ebpf_probe/core");
     rmdir("/sys/fs/bpf/ebpf_probe/rapl");
     rmdir("/sys/fs/bpf/ebpf_probe");
 }
 
-bool UserspaceLoader::_is_core_online(size_t cpu_idx)
+bool
+UserspaceLoader::_is_core_online(
+        unsigned int cpu)
 {
     char path[64];
-    snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%ld/online", cpu_idx);
+    snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/online", cpu);
     FILE* file = fopen(path, "r");
     if (!file)
     {

@@ -18,14 +18,14 @@ CoreIteratorBPF::~CoreIteratorBPF()
     std::remove(_pinned_file_path.c_str());
 }
 
-void CoreIteratorBPF::init()
+void
+CoreIteratorBPF::init()
 {
     _bpf.reset(core_iterator_bpf__open());
     if (_bpf == nullptr)
         ERROR("Failed to open iterator BPF object for CPU {}", _cpu);
     
-    _bpf->rodata->cpu     = (__u32)_cpu;
-    _bpf->rodata->verbose = _options.verbose;
+    _bpf->rodata->cpu = (__u32)_cpu;
 
     if (core_iterator_bpf__load(_bpf.get()) != 0)
         ERROR("Failed to load iterator BPF object for CPU {}", _cpu);
