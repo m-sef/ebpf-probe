@@ -35,6 +35,8 @@ handle_signal_interrupt(
 
 int main(int argc, char** argv)
 {
+    signal(SIGINT, handle_signal_interrupt);
+    
     CLI::App app{DESCRIPTION, NAME};
 
     app.add_option("-i,--interface", options.interface_name, 
@@ -51,8 +53,6 @@ int main(int argc, char** argv)
 
     UserspaceLoader userspace_loader(options);
     userspace_loader.init();
-
-    signal(SIGINT, handle_signal_interrupt);
 
     while (running)
         pause();

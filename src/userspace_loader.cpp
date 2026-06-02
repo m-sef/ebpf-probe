@@ -48,6 +48,8 @@ UserspaceLoader::UserspaceLoader(
 
 UserspaceLoader::~UserspaceLoader()
 {
+    _core_iterators.clear();
+    _rapl_iterators.clear();
     _remove_sys_directories();
 }
 

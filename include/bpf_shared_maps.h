@@ -30,7 +30,7 @@ struct {
 /* Updated by 'timer' bpf program */
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, NUM_EVENT_TYPES);
+    __uint(max_entries, 1);
     __type(key, __u32);
     __type(value, struct core_map_entry);
     __uint(pinning, LIBBPF_PIN_BY_NAME);
