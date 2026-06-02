@@ -95,7 +95,7 @@ void UserspaceLoader::init()
 
     */
 
-    INFO("ebpf-probe started successfully");
+    INFO("eBPF Probe is now running");
 }
 
 static inline void

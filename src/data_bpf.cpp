@@ -43,7 +43,7 @@ DataBPF::init()
 
     _populate_rapl_event_map();
 
-    INFOV(_options, "Successfully initialized DataBPF object...");
+    INFOV(_options, "Initialized DataBPF object");
 }
 
 void
@@ -75,7 +75,7 @@ DataBPF::_populate_perf_event_map_for_cpu(unsigned int cpu) const
         close(perf_event_fd);
     }
 
-    INFOV(_options, "Successfully populated BPF perf event map for CPU {}", cpu);
+    INFOV(_options, "Populated BPF perf event map for CPU {}", cpu);
 }
 
 void
@@ -115,6 +115,8 @@ DataBPF::_populate_rapl_event_map() const
         bpf_map_update_elem(rapl_map_fd, &key, &rapl_event_fd, BPF_ANY);
 
         close(rapl_event_fd);
+
+        INFOV(_options, "Populated BPF rapl event map for domain '{}'", rapl_domain_names[domain]);
     }
 }
 
