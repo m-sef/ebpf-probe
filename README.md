@@ -23,7 +23,7 @@ make
 ## Usage
 
 ```
-sudo ./build/ebpf_probe [-h] [OPTIONS]
+sudo ebpf_probe [-h] [OPTIONS]
 ```
 
 | Option | Long Option | Description |

@@ -33,45 +33,14 @@ public:
 private:
     void _create_sys_directories();
     void _remove_sys_directories();
-    void _remove_core_files();
-    void _remove_rapl_files();
-
-    void _attach_xdp(const std::string& interface_name);
-    void _attach_tcx(const std::string& interface_name);
-    void _attach_timer(int sample_frequency);
 
     bool _is_core_online(size_t cpu_idx);
-    void _init_core(size_t cpu_idx);
-    void _init_perf_event_map_for_core(size_t cpu_idx);
-    void _init_iterator_for_core(size_t cpu_idx);
-
-    void _init_rapl_event_map();
-    void _init_rapl_iterators();
 
     const struct options _options;
     const __u32 _cpu_count;
 
-    struct data_bpf* _data_bpf;
-    std::vector<struct core_iterator_bpf*> _core_iterator_bpfs;
-    std::vector<struct rapl_iterator_bpf*> _rapl_iterator_bpfs;
-
-    std::vector<bpf_link*> _timer_links;
-    std::vector<bpf_link*> _core_iterator_links;
-    std::vector<bpf_link*> _rapl_iterator_links;
-
-    // For potential future refactor
-    // TODO: Encapsulate all BPF programs in their own classes which appropriately handle destructors on std::runtime_error
-    // TODO: Change all ERROR call sites to instead throw std::runtime_error
-    // TODO: Change _cpu to a consistent type across all programs? (Ideally int or unsigned int?)
-    // UserspaceLoader will remain responsible for populating perf_event_map, and rapl_event_map on a per-core/per-domain basis
-
-    /* DataBPF(const options_t& options) Example constructor call */
-    DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs */
-
-    // /* CoreIteratorBPF(const options_t& options, int cpu) Example constructor call */
+    DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs. Also populates perf and rapl event maps */
     std::vector<CoreIteratorBPF> _core_iterators; /* Handles per-core iterator BPF programs */
-
-    // /* RAPLIteratorBPF(const options_t& options, int domain) Example constructor call */
     std::vector<RAPLIteratorBPF> _rapl_iterators; /* Handles per-RAPL domain iterator BPF programs */
 };
 
