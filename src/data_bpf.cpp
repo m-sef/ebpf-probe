@@ -75,7 +75,7 @@ DataBPF::_populate_perf_event_map_for_cpu(unsigned int cpu) const
         close(perf_event_fd);
     }
 
-    INFOV(_options, "Populated BPF perf event map for CPU {}", cpu);
+    INFOV(_options, "Populated perf_event_map for CPU {}", cpu);
 }
 
 void
@@ -116,7 +116,7 @@ DataBPF::_populate_rapl_event_map() const
 
         close(rapl_event_fd);
 
-        INFOV(_options, "Populated BPF rapl event map for domain '{}'", rapl_domain_names[domain]);
+        INFOV(_options, "Populated rapl_event_map for domain '{}'", rapl_domain_names[domain]);
     }
 }
 

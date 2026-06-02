@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <format>
 
-#define INFO_PREFIX "[INFO] "
+#define INFO_PREFIX "> "
 #define WARNING_PREFIX "[WARNING] "
 
 #define INFO(message, ...) \

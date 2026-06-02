@@ -67,7 +67,7 @@ void UserspaceLoader::init()
     FOREACH_RAPL_DOMAIN(domain)
         _rapl_iterators[domain].init();
 
-    INFO("eBPF Probe is now running");
+    INFO("eBPF Probe is now running. Data can be found under /sys/fs/bpf/ebpf_probe. CTRL+C to stop");
 }
 
 static inline void
