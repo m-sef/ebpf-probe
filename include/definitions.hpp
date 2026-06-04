@@ -11,6 +11,14 @@
 #include <stdexcept>
 #include <format>
 
+typedef struct options {
+    std::string interface; /* Listen for packets on this network interface */
+    int frequency;
+    bool verbose;
+} options_t;
+
+extern options_t options;
+
 #define INFO_PREFIX "> "
 #define WARNING_PREFIX "[WARNING] "
 
@@ -19,7 +27,7 @@ do { \
     std::cout << INFO_PREFIX << std::format(message, ##__VA_ARGS__) << std::endl; \
 } while (0)
 
-#define INFOV(options, message, ...) \
+#define INFOV(message, ...) \
 do { \
     if (options.verbose) \
         std::cout << INFO_PREFIX << std::format(message, ##__VA_ARGS__) << std::endl; \
@@ -30,7 +38,7 @@ do { \
     std::cout << WARNING_PREFIX << std::format(message, ##__VA_ARGS__) << std::endl; \
 } while (0)
 
-#define WARNINGV(options, message, ...) \
+#define WARNINGV(message, ...) \
 do { \
     if (options.verbose) \
         std::cout << WARNING_PREFIX << std::format(message, ##__VA_ARGS__) << std::endl; \
@@ -40,12 +48,6 @@ do { \
 do { \
     throw std::runtime_error(std::format(message, ##__VA_ARGS__)); \
 } while(0)
-
-typedef struct options {
-    std::string interface_name; /* Listen for packets on this network interface */
-    int sample_frequency;
-    bool verbose;
-} options_t;
 
 typedef int fd_t;
 typedef unsigned int cpu_t;

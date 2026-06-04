@@ -31,19 +31,17 @@
 #define FOREACH_CPU(cpu) for (unsigned int cpu = 0; cpu < _cpu_count; cpu++)
 #define FOREACH_RAPL_DOMAIN(i) for (size_t i = 0; i < RAPL_DOMAINS_MAX; i++)
 
-UserspaceLoader::UserspaceLoader(
-        const struct options& options)
-    : _options(options)
-    , _cpu_count(libbpf_num_possible_cpus())
-    , _data(_options, _cpu_count)
+UserspaceLoader::UserspaceLoader()
+    : _cpu_count(libbpf_num_possible_cpus())
+    , _data(_cpu_count)
 {
     _core_iterators.reserve(_cpu_count);
     FOREACH_CPU(cpu)
-        _core_iterators.emplace_back(_options, cpu);
+        _core_iterators.emplace_back(cpu);
     
     _rapl_iterators.reserve(RAPL_DOMAINS_MAX);
     FOREACH_RAPL_DOMAIN(domain)
-        _rapl_iterators.emplace_back(_options, domain);
+        _rapl_iterators.emplace_back(domain);
 }
 
 UserspaceLoader::~UserspaceLoader()

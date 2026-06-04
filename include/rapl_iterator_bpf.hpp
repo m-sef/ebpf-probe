@@ -16,7 +16,7 @@
 class RAPLIteratorBPF
 {
 public:
-    RAPLIteratorBPF(const options_t& options, unsigned int domain);
+    RAPLIteratorBPF(unsigned int domain);
     ~RAPLIteratorBPF();
 
     void init();
@@ -26,7 +26,6 @@ public:
     RAPLIteratorBPF(RAPLIteratorBPF&&) = default;
     RAPLIteratorBPF& operator=(RAPLIteratorBPF&&) = default;
 private:
-    const options_t& _options;
     const unsigned int _domain;
 
     std::unique_ptr<rapl_iterator_bpf, decltype(&rapl_iterator_bpf__destroy)> _bpf;

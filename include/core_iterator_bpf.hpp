@@ -16,7 +16,7 @@
 class CoreIteratorBPF
 {
 public:
-    CoreIteratorBPF(const options_t& options, unsigned int cpu);
+    CoreIteratorBPF(unsigned int cpu);
     ~CoreIteratorBPF();
 
     void init();
@@ -26,7 +26,6 @@ public:
     CoreIteratorBPF(CoreIteratorBPF&&) = default;
     CoreIteratorBPF& operator=(CoreIteratorBPF&&) = default;
 private:
-    const options_t& _options;
     const unsigned int _cpu;
 
     std::unique_ptr<core_iterator_bpf, decltype(&core_iterator_bpf__destroy)> _bpf;

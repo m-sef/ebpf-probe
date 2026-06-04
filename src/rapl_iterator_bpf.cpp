@@ -5,10 +5,8 @@
 #include "rapl_helpers.hpp"
 
 RAPLIteratorBPF::RAPLIteratorBPF(
-        const options_t& options,
         unsigned int domain)
-    : _options(options)
-    , _domain(domain)
+    : _domain(domain)
     , _bpf(nullptr, &rapl_iterator_bpf__destroy)
     , _link(nullptr, &bpf_link__destroy)
 {
@@ -50,5 +48,5 @@ void RAPLIteratorBPF::init()
     if (bpf_link__pin(_link.get(), _pinned_file_path.c_str()) != 0)
         ERROR("Failed to pin iterator link for domain {}", _domain);
 
-    INFOV(_options, "Initialized RAPLIteratorBPF object for domain '{}'", rapl_domain_names[_domain]);
+    INFOV("Initialized RAPLIteratorBPF object for domain '{}'", rapl_domain_names[_domain]);
 }

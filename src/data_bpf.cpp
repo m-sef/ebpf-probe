@@ -11,10 +11,8 @@
 #define FOREACH_RAPL_DOMAIN(i) for (size_t i = 0; i < RAPL_DOMAINS_MAX; i++)
 
 DataBPF::DataBPF(
-        const options_t& options,
         unsigned int cpu_count)
-    : _options(options)
-    , _cpu_count(cpu_count)
+    : _cpu_count(cpu_count)
     , _bpf(nullptr, &data_bpf__destroy)
 {
 
@@ -32,18 +30,18 @@ DataBPF::init()
     if (data_bpf::load(_bpf.get()) != 0)
         ERROR("Failed to load BPF object");
     
-    _attach_xdp(_options.interface_name);
-    _attach_tcx(_options.interface_name);
+    _attach_xdp(options.interface);
+    _attach_tcx(options.interface);
 
     FOREACH_CPU(cpu_idx)
     {
         _populate_perf_event_map_for_cpu(cpu_idx);
-        _attach_timer_for_cpu(_options.sample_frequency, cpu_idx);
+        _attach_timer_for_cpu(options.frequency, cpu_idx);
     }
 
     _populate_rapl_event_map();
 
-    INFOV(_options, "Initialized DataBPF object");
+    INFOV("Initialized DataBPF object");
 }
 
 void
@@ -65,7 +63,7 @@ DataBPF::_populate_perf_event_map_for_cpu(unsigned int cpu) const
         fd_t perf_event_fd = perf_event_open(&perf_events[perf_event], -1, cpu, -1, 0);
         if (perf_event_fd < 0)
         {
-            WARNINGV(_options, "Failed to get file descriptor for perf event {} for CPU {}", perf_event_names[perf_event], cpu);
+            WARNINGV("Failed to get file descriptor for perf event {} for CPU {}", perf_event_names[perf_event], cpu);
             continue;
         }
 
@@ -75,7 +73,7 @@ DataBPF::_populate_perf_event_map_for_cpu(unsigned int cpu) const
         close(perf_event_fd);
     }
 
-    INFOV(_options, "Populated perf_event_map for CPU {}", cpu);
+    INFOV("Populated perf_event_map for CPU {}", cpu);
 }
 
 void
@@ -116,7 +114,7 @@ DataBPF::_populate_rapl_event_map() const
 
         close(rapl_event_fd);
 
-        INFOV(_options, "Populated rapl_event_map for domain '{}'", rapl_domain_names[domain]);
+        INFOV("Populated rapl_event_map for domain '{}'", rapl_domain_names[domain]);
     }
 }
 

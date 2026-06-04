@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-for ((i=0; i<$(nproc); i++)); do sudo cpufreq-set --cpu $i --governor performance; done 

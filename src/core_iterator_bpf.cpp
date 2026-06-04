@@ -3,10 +3,8 @@
 #include <format>
 
 CoreIteratorBPF::CoreIteratorBPF(
-        const options_t& options,
         unsigned int cpu)
-    : _options(options)
-    , _cpu(cpu)
+    : _cpu(cpu)
     , _bpf(nullptr, &core_iterator_bpf__destroy)
     , _link(nullptr, &bpf_link__destroy)
 {
@@ -46,5 +44,5 @@ CoreIteratorBPF::init()
     if (bpf_link__pin(_link.get(), _pinned_file_path.c_str()) != 0)
         ERROR("Failed to pin iterator link for CPU {}", _cpu);
 
-    INFOV(_options, "Initialized CoreIteratorBPF object for CPU {}", _cpu);
+    INFOV("Initialized CoreIteratorBPF object for CPU {}", _cpu);
 }

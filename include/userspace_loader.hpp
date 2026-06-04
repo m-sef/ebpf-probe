@@ -18,7 +18,7 @@
 class UserspaceLoader
 {
 public:
-    UserspaceLoader(const struct options& options);
+    UserspaceLoader();
     ~UserspaceLoader();
 
     UserspaceLoader(const UserspaceLoader& other) = delete;
@@ -33,7 +33,6 @@ private:
 
     bool _is_core_online(unsigned int cpu);
 
-    const struct options _options;
     const unsigned int _cpu_count;
 
     DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs. Also populates perf and rapl event maps */

@@ -19,7 +19,7 @@
 class DataBPF
 {
 public:
-    DataBPF(const options_t& options, unsigned int cpu_count);
+    DataBPF(unsigned int cpu_count);
 
     void init();
 private:
@@ -31,7 +31,6 @@ private:
     void _attach_timer(unsigned int sample_frequency);
     void _attach_timer_for_cpu(unsigned int sample_frequency, unsigned int cpu);
 
-    const options_t& _options;
     const unsigned int _cpu_count;
     
     std::unique_ptr<struct data_bpf, decltype(&data_bpf__destroy)> _bpf;

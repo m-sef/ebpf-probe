@@ -22,7 +22,7 @@ under /sys/fs/bpf/ebpf_probe/ and can be read with standard shell tools."
 
 #define NAME "ebpf_probe"
 
-static struct options options = {};
+options_t options = {};
 
 static volatile sig_atomic_t running = true;
 
@@ -39,10 +39,10 @@ int main(int argc, char** argv)
     
     CLI::App app{DESCRIPTION, NAME};
 
-    app.add_option("-i,--interface", options.interface_name, 
+    app.add_option("-i,--interface", options.interface, 
         "Listen for network traffic on this interface")
         ->required();
-    app.add_option("-f,--frequency", options.sample_frequency,
+    app.add_option("-f,--frequency", options.frequency,
         "Sample at this frequency per second for each CPU")
         ->default_val(1);
     app.add_flag("-v,--verbose", options.verbose,
@@ -51,7 +51,7 @@ int main(int argc, char** argv)
     
     CLI11_PARSE(app, argc, argv);
 
-    UserspaceLoader userspace_loader(options);
+    UserspaceLoader userspace_loader;
     userspace_loader.init();
 
     while (running)
