@@ -10,7 +10,7 @@
 #include <string>
 #include <memory>
 
-#include "core_iterator.skel.h"
+#include "generated/core_iterator.skel.h"
 #include "definitions.hpp"
 
 class CoreIteratorBPF

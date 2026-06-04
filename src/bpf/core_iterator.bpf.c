@@ -3,11 +3,11 @@
  * @author Seth Moore (slmoore@hamilton.edu)
  * 
  */
-#include <vmlinux.h>
+#include "generated/vmlinux.h"
 #include <bpf/bpf_helpers.h>
 
-#include <bpf_definitions.h>
-#include <bpf_shared_maps.h>
+#include "bpf/definitions.h"
+#include "bpf/shared_maps.h"
 
 volatile const __u32 cpu;
 

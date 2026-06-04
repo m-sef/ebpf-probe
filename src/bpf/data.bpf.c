@@ -3,12 +3,12 @@
  * @author Seth Moore (slmoore@hamilton.edu)
  * 
  */
-#include "vmlinux.h"
+#include "generated/vmlinux.h"
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
 
-#include <bpf_definitions.h>
-#include <bpf_shared_maps.h>
+#include "bpf/definitions.h"
+#include "bpf/shared_maps.h"
 
 static inline void
 increment_core_stats_rx_counters(

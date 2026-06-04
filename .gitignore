@@ -3,9 +3,5 @@ CLAUDE.md
 /venv
 /build
 
-/include/vmlinux.h
-/include/*.skel.h
-
-/benchmark/logs/*
-/benchmark/logs/*/
-!/benchmark/logs/.gitkeep
+/include/generated/*
+!/include/generated/.gitkeep

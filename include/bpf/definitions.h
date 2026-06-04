@@ -8,7 +8,7 @@
 #define BPF_DEFINITIONS_H
 
 #ifdef __BPF__
-#include "vmlinux.h"
+#include "generated/vmlinux.h"
 #else
 #include <linux/types.h>
 #include <linux/bpf.h>

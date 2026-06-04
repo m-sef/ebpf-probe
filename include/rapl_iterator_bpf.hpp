@@ -10,7 +10,7 @@
 #include <string>
 #include <memory>
 
-#include "rapl_iterator.skel.h"
+#include "generated/rapl_iterator.skel.h"
 #include "definitions.hpp"
 
 class RAPLIteratorBPF

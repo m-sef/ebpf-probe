@@ -3,6 +3,8 @@
  * @author Seth Moore (slmoore@hamilton.edu)
  * 
  */
+#include "userspace_loader.hpp"
+
 #include <linux/perf_event.h>
 #include <linux/hw_breakpoint.h>
 #include <linux/types.h>
@@ -19,12 +21,11 @@
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
 
-#include "data.skel.h"
-#include "core_iterator.skel.h"
-#include "rapl_iterator.skel.h"
+#include "generated/data.skel.h"
+#include "generated/core_iterator.skel.h"
+#include "generated/rapl_iterator.skel.h"
+#include "bpf/definitions.h"
 #include "definitions.hpp"
-#include "bpf_definitions.h"
-#include "userspace_loader.hpp"
 
 #define ROOT_PRIVILEGES 0
 

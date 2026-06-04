@@ -6,10 +6,7 @@
 #ifndef BPF_SHARED_MAPS_H
 #define BPF_SHARED_MAPS_H
 
-#include <vmlinux.h>
 #include <bpf/bpf_helpers.h>
-
-#include <bpf_definitions.h>
 
 /* Stores file descriptors for perf events */
 struct {

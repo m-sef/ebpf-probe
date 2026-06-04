@@ -4,19 +4,19 @@ project(ebpf_probe)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(VMLINUX_HEADER ${CMAKE_SOURCE_DIR}/include/vmlinux.h)
+set(VMLINUX_HEADER ${CMAKE_SOURCE_DIR}/include/generated/vmlinux.h)
 
-set(BPF_DATA_SOURCE ${CMAKE_SOURCE_DIR}/src/data.bpf.c)
+set(BPF_DATA_SOURCE ${CMAKE_SOURCE_DIR}/src/bpf/data.bpf.c)
 set(BPF_DATA_OBJECT ${CMAKE_BINARY_DIR}/data.bpf.o)
-set(BPF_DATA_SKELETON ${CMAKE_SOURCE_DIR}/include/data.skel.h)
+set(BPF_DATA_SKELETON ${CMAKE_SOURCE_DIR}/include/generated/data.skel.h)
 
-set(BPF_CORE_ITER_SOURCE ${CMAKE_SOURCE_DIR}/src/core_iterator.bpf.c)
+set(BPF_CORE_ITER_SOURCE ${CMAKE_SOURCE_DIR}/src/bpf/core_iterator.bpf.c)
 set(BPF_CORE_ITER_OBJECT ${CMAKE_BINARY_DIR}/core_iterator.bpf.o)
-set(BPF_CORE_ITER_SKELETON ${CMAKE_SOURCE_DIR}/include/core_iterator.skel.h)
+set(BPF_CORE_ITER_SKELETON ${CMAKE_SOURCE_DIR}/include/generated/core_iterator.skel.h)
 
-set(BPF_RAPL_ITER_SOURCE ${CMAKE_SOURCE_DIR}/src/rapl_iterator.bpf.c)
+set(BPF_RAPL_ITER_SOURCE ${CMAKE_SOURCE_DIR}/src/bpf/rapl_iterator.bpf.c)
 set(BPF_RAPL_ITER_OBJECT ${CMAKE_BINARY_DIR}/rapl_iterator.bpf.o)
-set(BPF_RAPL_ITER_SKELETON ${CMAKE_SOURCE_DIR}/include/rapl_iterator.skel.h)
+set(BPF_RAPL_ITER_SKELETON ${CMAKE_SOURCE_DIR}/include/generated/rapl_iterator.skel.h)
 
 #------------------------------------------------------------------------------
 # Generate 'include/vmlinux.h' using bpftool

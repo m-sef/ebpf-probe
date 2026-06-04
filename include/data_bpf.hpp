@@ -13,7 +13,7 @@
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
 
-#include "data.skel.h"
+#include "generated/data.skel.h"
 #include "definitions.hpp"
 
 class DataBPF
