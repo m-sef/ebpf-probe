@@ -161,10 +161,10 @@ add_executable(
     src/main.cpp
     src/userspace_loader.cpp
     src/data_bpf.cpp
-    src/core_iterator_bpf.cpp
-    src/rapl_iterator_bpf.cpp
-    src/interface_iterator_bpf.cpp
-    src/event_iterator_bpf.cpp)
+    src/iterator/core_iterator_bpf.cpp
+    src/iterator/rapl_iterator_bpf.cpp
+    src/iterator/interface_iterator_bpf.cpp
+    src/iterator/event_iterator_bpf.cpp)
 target_include_directories(ebpf_probe PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(ebpf_probe PRIVATE bpf)
 target_compile_options(ebpf_probe PRIVATE -O3 -Wall -Werror)

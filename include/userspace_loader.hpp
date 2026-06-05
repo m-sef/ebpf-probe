@@ -11,9 +11,10 @@
 #include <memory>
 
 #include "data_bpf.hpp"
-#include "core_iterator_bpf.hpp"
-#include "rapl_iterator_bpf.hpp"
-#include "interface_iterator_bpf.hpp"
+#include "iterator/core_iterator_bpf.hpp"
+#include "iterator/rapl_iterator_bpf.hpp"
+#include "iterator/interface_iterator_bpf.hpp"
+#include "iterator/event_iterator_bpf.hpp"
 #include "definitions.hpp"
 
 class UserspaceLoader
