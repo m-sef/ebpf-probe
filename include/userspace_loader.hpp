@@ -13,6 +13,7 @@
 #include "data_bpf.hpp"
 #include "core_iterator_bpf.hpp"
 #include "rapl_iterator_bpf.hpp"
+#include "interface_iterator_bpf.hpp"
 #include "definitions.hpp"
 
 class UserspaceLoader
@@ -36,8 +37,9 @@ private:
     const unsigned int _cpu_count;
 
     DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs. Also populates perf and rapl event maps */
-    std::vector<CoreIteratorBPF> _core_iterators; /* Handles per-core iterator BPF programs */
-    std::vector<RAPLIteratorBPF> _rapl_iterators; /* Handles per-RAPL domain iterator BPF programs */
+    std::vector<CoreIteratorBPF>      _core_iterators; /* Handles per-core iterator BPF programs */
+    std::vector<RAPLIteratorBPF>      _rapl_iterators; /* Handles per-RAPL domain iterator BPF programs */
+    std::vector<InterfaceIteratorBPF> _interface_iterators;
 };
 
 #endif

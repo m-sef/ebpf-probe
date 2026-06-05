@@ -28,9 +28,10 @@ struct {
 
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 20);
+    __uint(max_entries, 20); /* Needs to be assigned at runtime to the amount of interfaces passed as command line arguments */
     __type(key, unsigned int);
     __type(value, struct interface_stats);
+    __uint(pinning, LIBBPF_PIN_BY_NAME);
 } interface_stats_map SEC(".maps");
 
 /* Updated by 'timer' bpf program */

@@ -9,6 +9,8 @@
 #include "bpf/definitions.h"
 #include "bpf/shared_maps.h"
 
+#define PRINTF(message, ...) BPF_SEQ_PRINTF(seq, message, ##__VA_ARGS__)
+
 volatile const char rapl_domain_name[32];
 volatile const char scale[32];
 volatile const char unit[32];
@@ -22,14 +24,12 @@ static const char rapl_domain_names[][8] = {
 	[RAPL_PSYS]   = "psys",
 };
 
-char _license[] SEC("license") = "GPL";
-
 SEC("iter/bpf_map_elem")
 int dump_counters(struct bpf_iter__bpf_map_elem* context)
 {
     struct seq_file* seq = context->meta->seq;
 
-    if (!context->key)
+    if (context->key == NULL)
         return 0;
     
     if (*((__u32*)context->key) != domain)
@@ -40,8 +40,10 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
     if (!ptr)
         return 0;
     
-    BPF_SEQ_PRINTF(seq, "#domain,counter,unit,scale\n");
-    BPF_SEQ_PRINTF(seq, "%s,%llu,%s,%s\n", rapl_domain_name, ptr->counter, unit, scale);
+    PRINTF("#domain,counter,unit,scale\n");
+    PRINTF("%s,%llu,%s,%s\n", rapl_domain_name, ptr->counter, unit, scale);
     
     return 0;
 }
+
+char _license[] SEC("license") = "GPL";

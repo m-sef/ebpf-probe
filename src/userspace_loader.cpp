@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <err.h>
+#include <format>
 
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
@@ -43,12 +44,17 @@ UserspaceLoader::UserspaceLoader()
     _rapl_iterators.reserve(RAPL_DOMAINS_MAX);
     FOREACH_RAPL_DOMAIN(domain)
         _rapl_iterators.emplace_back(domain);
+    
+    FOREACH_CPU(cpu)
+        _interface_iterators.emplace_back(cpu, 1, std::format("/sys/fs/bpf/ebpf_probe/cpu{}/lo", cpu));
+    
 }
 
 UserspaceLoader::~UserspaceLoader()
 {
     _core_iterators.clear();
     _rapl_iterators.clear();
+    _interface_iterators.clear();
     _remove_sys_directories();
 }
 
@@ -68,6 +74,10 @@ UserspaceLoader::init()
     
     FOREACH_RAPL_DOMAIN(domain)
         _rapl_iterators[domain].init();
+    
+    FOREACH_CPU(cpu)
+        if (_is_core_online(cpu))
+            _interface_iterators[cpu].init();
 
     INFO("eBPF Probe is now running. Data can be found under /sys/fs/bpf/ebpf_probe. CTRL+C to stop");
 }

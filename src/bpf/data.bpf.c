@@ -10,6 +10,13 @@
 #include "bpf/definitions.h"
 #include "bpf/shared_maps.h"
 
+/**
+ * @brief Increments the rx_packets and rx_bytes values of the core_map_entry.interface struct
+ *        of the core_stats_map BPF PERCPU array.
+ * 
+ * @param rx_packets 
+ * @param rx_bytes 
+ */
 static inline void
 increment_core_stats_rx_counters(
         __u64 rx_packets,
@@ -17,13 +24,20 @@ increment_core_stats_rx_counters(
 {
     __u32 key = 0;
     struct core_map_entry* ptr = bpf_map_lookup_elem(&core_stats_map, &key);
-    if (ptr)
-    {
-        ptr->interface.rx_packets += rx_packets;
-        ptr->interface.rx_bytes   += rx_bytes;
-    }
+    if (ptr == NULL)
+        return;
+    
+    ptr->interface.rx_packets += rx_packets;
+    ptr->interface.rx_bytes   += rx_bytes;
 }
 
+/**
+ * @brief Increments the tx_packets and tx_bytes values of the core_map_entry.interface struct
+ *        of the core_stats_map BPF PERCPU array.
+ * 
+ * @param tx_packets 
+ * @param tx_bytes 
+ */
 static inline void
 increment_core_stats_tx_counters(
         __u64 tx_packets,
@@ -31,13 +45,59 @@ increment_core_stats_tx_counters(
 {
     __u32 key = 0;
     struct core_map_entry* ptr = bpf_map_lookup_elem(&core_stats_map, &key);
-    if (ptr)
-    {
-        ptr->interface.tx_packets += tx_packets;
-        ptr->interface.tx_bytes   += tx_bytes;
-    }
+    if (ptr == NULL)
+        return;
+    
+    ptr->interface.tx_packets += tx_packets;
+    ptr->interface.tx_bytes   += tx_bytes;
 }
 
+/**
+ * @brief Increments the rx_packets and rx_bytes value of the interface_stats BPF PERCPU array.
+ * 
+ * @param ifindex 
+ * @param rx_packets 
+ * @param rx_bytes 
+ */
+static inline void
+increment_interface_stats_rx_counters(
+        unsigned int ifindex,
+        __u64 rx_packets,
+        __u64 rx_bytes)
+{
+    struct interface_stats* ptr = bpf_map_lookup_elem(&interface_stats_map, &ifindex);
+    if (ptr == NULL)
+        return;
+
+    ptr->rx_packets += rx_packets;
+    ptr->rx_bytes   += rx_bytes;
+}
+
+/**
+ * @brief Increments the tx_packets and tx_bytes value of the interface_stats BPF PERCPU array.
+ * 
+ * @param ifindex 
+ * @param tx_packets 
+ * @param tx_bytes 
+ */
+static inline void
+increment_interface_stats_tx_counters(
+        unsigned int ifindex,
+        __u64 tx_packets,
+        __u64 tx_bytes)
+{
+    struct interface_stats* ptr = bpf_map_lookup_elem(&interface_stats_map, &ifindex);
+    if (ptr == NULL)
+        return;
+    
+    ptr->tx_packets += tx_packets;
+    ptr->tx_bytes   += tx_bytes;
+}
+
+/**
+ * @brief XDP BPF program. Attaches to the XDP hook, and triggers everytime a packet is received.
+ * 
+ */
 SEC("xdp")
 int xdp_ingress(struct xdp_md* context)
 {
@@ -45,10 +105,15 @@ int xdp_ingress(struct xdp_md* context)
     void* data_end = (void*)(long)context->data_end;
 
     increment_core_stats_rx_counters(1, data_end - data);
+    increment_interface_stats_rx_counters(context->ingress_ifindex, 1, data_end - data);
 
     return XDP_PASS;
 }
 
+/**
+ * @brief TCX egress BPF program. Attaches to the TCX egress hook and triggers everytime a packet is transmitted.
+ * 
+ */
 SEC("tcx/egress")
 int tcx_egress(struct __sk_buff* context)
 {
@@ -56,6 +121,7 @@ int tcx_egress(struct __sk_buff* context)
     void* data_end = (void *)(__u64)context->data_end;
 
     increment_core_stats_tx_counters(1, data_end - data);
+    increment_interface_stats_tx_counters(context->ifindex, 1, data_end - data);
 
     return TCX_PASS;
 }
