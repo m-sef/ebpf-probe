@@ -106,6 +106,9 @@ UserspaceLoader::_create_sys_directories()
     make_directory("/sys/fs/bpf/ebpf_probe",      0x700);
     make_directory("/sys/fs/bpf/ebpf_probe/core", 0x700);
     make_directory("/sys/fs/bpf/ebpf_probe/rapl", 0x700);
+
+    FOREACH_CPU(cpu)
+        make_directory(std::format("/sys/fs/bpf/ebpf_probe/cpu{}", cpu), 0x700);
 }
 
 void
@@ -113,6 +116,10 @@ UserspaceLoader::_remove_sys_directories()
 {
     rmdir("/sys/fs/bpf/ebpf_probe/core");
     rmdir("/sys/fs/bpf/ebpf_probe/rapl");
+
+    FOREACH_CPU(cpu)
+        rmdir(std::format("/sys/fs/bpf/ebpf_probe/cpu{}", cpu).c_str());
+    
     rmdir("/sys/fs/bpf/ebpf_probe");
 }
 

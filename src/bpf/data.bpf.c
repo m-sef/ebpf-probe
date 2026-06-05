@@ -19,8 +19,8 @@ increment_core_stats_rx_counters(
     struct core_map_entry* ptr = bpf_map_lookup_elem(&core_stats_map, &key);
     if (ptr)
     {
-        ptr->rx_packets += rx_packets;
-        ptr->rx_bytes   += rx_bytes;
+        ptr->interface.rx_packets += rx_packets;
+        ptr->interface.rx_bytes   += rx_bytes;
     }
 }
 
@@ -33,8 +33,8 @@ increment_core_stats_tx_counters(
     struct core_map_entry* ptr = bpf_map_lookup_elem(&core_stats_map, &key);
     if (ptr)
     {
-        ptr->tx_packets += tx_packets;
-        ptr->tx_bytes   += tx_bytes;
+        ptr->interface.tx_packets += tx_packets;
+        ptr->interface.tx_bytes   += tx_bytes;
     }
 }
 

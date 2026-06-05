@@ -14,11 +14,15 @@
 #include <linux/bpf.h>
 #endif
 
+struct interface_stats {
+    __u64 rx_packets; /* Total received packets */
+    __u64 rx_bytes;   /* Total received bytes */
+    __u64 tx_packets; /* Total transmitted packets */
+    __u64 tx_bytes;   /* Total transmitted bytes */
+};
+
 struct core_map_entry {
-    __u64 rx_packets;
-    __u64 rx_bytes;
-    __u64 tx_packets;
-    __u64 tx_bytes;
+    struct interface_stats interface;
     struct bpf_perf_event_value instructions;
     struct bpf_perf_event_value cpu_cycles;
     struct bpf_perf_event_value ref_cpu_cycles;
