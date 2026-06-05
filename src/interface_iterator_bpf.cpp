@@ -14,7 +14,7 @@ InterfaceIteratorBPF::InterfaceIteratorBPF(
     , _bpf(nullptr, &interface_iterator_bpf__destroy)
     , _link(nullptr, &bpf_link__destroy)
 {
-    
+
 }
 
 InterfaceIteratorBPF::~InterfaceIteratorBPF()
@@ -35,10 +35,10 @@ void InterfaceIteratorBPF::init()
         ERROR("Failed to load iterator BPF object for CPU {}, interface {}", _cpu, _ifindex);
     
     union bpf_iter_link_info linfo = {};
-    linfo.map.map_fd = (uint32_t)bpf_map__fd(_bpf->maps.rapl_stats_map); 
+    linfo.map.map_fd = (uint32_t)bpf_map__fd(_bpf->maps.interface_stats_map); 
     /* I have no idea why this doesn't break the entire program... 
        (rapl_stats_map should be a member of data.bpf.c, not this BPF, no?)
-       But I also don't know why it is necessary either. */
+       But I also don't entirely know why it is necessary either. */
 
     LIBBPF_OPTS(bpf_iter_attach_opts, attach_opts,
         .link_info     = &linfo,

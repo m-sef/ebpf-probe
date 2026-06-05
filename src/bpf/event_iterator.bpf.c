@@ -1,5 +1,5 @@
 /**
- * @file interface_iterator.bpf.c
+ * @file event_iterator.bpf.c
  * @author Seth Moore (slmoore@hamilton.edu)
  * 
  */
@@ -11,12 +11,11 @@
 
 #define PRINTF(message, ...) BPF_SEQ_PRINTF(seq, message, ##__VA_ARGS__)
 
-volatile const unsigned int cpu;
-volatile const unsigned int ifindex;
-volatile const char interface_name[256];
+const volatile unsigned int cpu;
+const volatile unsigned int event;
 
 SEC("iter/bpf_map_elem")
-int dump_interface_stats(struct bpf_iter__bpf_map_elem* context)
+int dump_perf_stats(struct bpf_iter__bpf_map_elem* context)
 {
     struct seq_file* seq = context->meta->seq;
 
@@ -26,12 +25,7 @@ int dump_interface_stats(struct bpf_iter__bpf_map_elem* context)
     if (*((unsigned int*)context->key) != cpu)
         return 0;
     
-    struct interface_stats* ptr = bpf_map_lookup_percpu_elem(&interface_stats_map, &ifindex, cpu);
-    if (ptr == NULL)
-        return 0;
-    
-    PRINTF("#rx_packets,rx_bytes,tx_packets,tx_bytes\n");
-    PRINTF("%ld,%ld,%ld,%ld\n", ptr->rx_packets, ptr->rx_bytes, ptr->tx_packets, ptr->tx_bytes);
+    PRINTF("#event,counter,enabled,running\n");
     
     return 0;
 }

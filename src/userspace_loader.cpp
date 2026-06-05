@@ -56,6 +56,9 @@ UserspaceLoader::~UserspaceLoader()
     _rapl_iterators.clear();
     _interface_iterators.clear();
     _remove_sys_directories();
+    unlink("/sys/fs/bpf/ebpf_probe/core_stats_map");
+    unlink("/sys/fs/bpf/ebpf_probe/rapl_stats_map");
+    unlink("/sys/fs/bpf/ebpf_probe/interface_stats_map");
 }
 
 void
