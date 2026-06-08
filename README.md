@@ -52,7 +52,7 @@ cat /sys/fs/bpf/ebpf_probe/cpu0/summary
 cat /sys/fs/bpf/ebpf_probe/cpu*/summary
 ```
 
-Each entry contains received and transmitted packet/byte counts alongside hardware counters (cycles, instructions, cache misses) and RAPL energy readings for that CPU.
+Each entry contains received and transmitted packet/byte counts alongside hardware counters (cycles, instructions, cache misses).
 
 ## Reading Interface Metrics
 per-CPU interface metrics are available at `/sys/fs/bpf/ebpf_probe/cpu<cpu>/<interface>`
