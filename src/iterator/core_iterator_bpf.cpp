@@ -4,9 +4,11 @@
 
 CoreIteratorBPF::CoreIteratorBPF(
         const DataBPF& data_bpf,
-        unsigned int cpu)
+        unsigned int cpu,
+        const std::string& file_path)
     : _data_bpf(data_bpf)
     , _cpu(cpu)
+    , _pinned_file_path(file_path)
     , _bpf(nullptr, &core_iterator_bpf__destroy)
     , _link(nullptr, &bpf_link__destroy)
 {
@@ -46,7 +48,6 @@ CoreIteratorBPF::init()
     if (_link == nullptr)
         ERROR("Failed to attach iterator for CPU {}", _cpu);
 
-    _pinned_file_path = std::format("/sys/fs/bpf/ebpf_probe/core/{}", _cpu);
     if (bpf_link__pin(_link.get(), _pinned_file_path.c_str()) != 0)
         ERROR("Failed to pin iterator link for CPU {}", _cpu);
 

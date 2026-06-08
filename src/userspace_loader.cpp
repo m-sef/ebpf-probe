@@ -39,7 +39,10 @@ UserspaceLoader::UserspaceLoader()
 {
     _core_iterators.reserve(_cpu_count);
     FOREACH_CPU(cpu)
-        _core_iterators.emplace_back(_data, cpu);
+    {
+        std::string pinned_file_path(std::format("/sys/fs/bpf/ebpf_probe/cpu{}/summary", cpu));
+        _core_iterators.emplace_back(_data, cpu, pinned_file_path);
+    }
     
     _rapl_iterators.reserve(RAPL_DOMAINS_MAX);
     FOREACH_RAPL_DOMAIN(domain)
@@ -119,7 +122,7 @@ void
 UserspaceLoader::_create_sys_directories()
 {
     make_directory("/sys/fs/bpf/ebpf_probe",      0x700);
-    make_directory("/sys/fs/bpf/ebpf_probe/core", 0x700);
+    //make_directory("/sys/fs/bpf/ebpf_probe/core", 0x700);
     make_directory("/sys/fs/bpf/ebpf_probe/rapl", 0x700);
 
     FOREACH_CPU(cpu)

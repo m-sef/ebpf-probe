@@ -19,7 +19,8 @@ class CoreIteratorBPF
 public:
     CoreIteratorBPF(
             const DataBPF& data_bpf,
-            unsigned int cpu);
+            unsigned int cpu,
+            const std::string& file_path);
     ~CoreIteratorBPF();
 
     void init();
@@ -31,10 +32,10 @@ public:
 private:
     const DataBPF&     _data_bpf;
     const unsigned int _cpu;
+    const std::string  _pinned_file_path;
 
     std::unique_ptr<core_iterator_bpf, decltype(&core_iterator_bpf__destroy)> _bpf;
     std::unique_ptr<bpf_link, decltype(&bpf_link__destroy)> _link;
-    std::string _pinned_file_path;
 };
 
 #endif
