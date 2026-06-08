@@ -7,12 +7,13 @@
 #define COMMON_DEFINITIONS_H
 
 #include <iostream>
+#include <vector>
 #include <string>
 #include <stdexcept>
 #include <format>
 
 typedef struct options {
-    std::string interface; /* Listen for packets on this network interface */
+    std::vector<std::string> interface;
     int frequency;
     bool verbose;
 } options_t;

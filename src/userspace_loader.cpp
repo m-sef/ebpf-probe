@@ -45,11 +45,14 @@ UserspaceLoader::UserspaceLoader()
     FOREACH_RAPL_DOMAIN(domain)
         _rapl_iterators.emplace_back(_data, domain);
     
+    _interface_iterators.reserve(_cpu_count * options.interface.size());
     FOREACH_CPU(cpu)
     {
-        std::string pinned_file_path(std::format("/sys/fs/bpf/ebpf_probe/cpu{}/{}", cpu, options.interface));
-
-        _interface_iterators.emplace_back(_data, cpu, options.interface, pinned_file_path);
+        for (const std::string& interface_name : options.interface)
+        {
+            std::string pinned_file_path(std::format("/sys/fs/bpf/ebpf_probe/cpu{}/{}", cpu, interface_name));
+            _interface_iterators.emplace_back(_data, cpu, interface_name, pinned_file_path);
+        }
     }
 }
 
@@ -78,9 +81,8 @@ UserspaceLoader::init()
     FOREACH_RAPL_DOMAIN(domain)
         _rapl_iterators[domain].init();
     
-    FOREACH_CPU(cpu)
-        if (_is_core_online(cpu))
-            _interface_iterators[cpu].init();
+    for (InterfaceIteratorBPF& interface_iterator_bpf : _interface_iterators)
+        interface_iterator_bpf.init();
 
     INFO("eBPF Probe is now running. Data can be found under /sys/fs/bpf/ebpf_probe. CTRL+C to stop");
 }

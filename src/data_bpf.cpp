@@ -30,8 +30,11 @@ DataBPF::init()
     if (data_bpf::load(_bpf.get()) != 0)
         ERROR("Failed to load BPF object");
     
-    _attach_xdp(options.interface);
-    _attach_tcx(options.interface);
+    for (const std::string& interface_name : options.interface)
+    {
+        _attach_xdp(interface_name);
+        _attach_tcx(interface_name);
+    }
 
     FOREACH_CPU(cpu_idx)
     {

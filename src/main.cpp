@@ -40,7 +40,7 @@ int main(int argc, char** argv)
     CLI::App app{DESCRIPTION, NAME};
 
     app.add_option("-i,--interface", options.interface, 
-        "Listen for network traffic on this interface")
+        "Monitor the network traffic on this interface(s)")
         ->required();
     app.add_option("-f,--frequency", options.frequency,
         "Sample at this frequency per second for each CPU")
