@@ -1,6 +1,6 @@
 # ebpf-probe
 
-An XDP-based packet counter with per-CPU hardware performance counter and energy (RAPL) collection. Metrics are written to pinned BPF iterator files under `/sys/fs/bpf/ebpf_probe/` and can be read with standard shell tools.
+A low-overhead eBPF-based monitoring program designed to collect and expose low-level system metrics (e.g. received and transmitted bytes/packets, total instructions processed per CPU, etc.) under the Linux sys psuedo filesystem.
 
 ## Requirements
 
@@ -23,29 +23,36 @@ make
 ## Usage
 
 ```
-sudo ebpf_probe [-h] [OPTIONS]
+ebpf_probe [OPTIONS]
 ```
 
 | Option | Long Option | Description |
 |--------|-------------|-------------|
 | `-h` | `--help` | Show help |
-| `-i INTERFACE` | `--interface` | Listen for network traffic on this interface (default: `lo`) |
+| `-i INTERFACE` | `--interface` | Listen for network traffic on this interface/interfaces (required) |
 | `-f FREQUENCY` | `--frequency` | Sample at this frequency per second for each CPU (default: 1) |
 | `-v` | `--verbose` | Verbose output (default: false) |
 
-## Reading Core Metrics
+### Example:
 
-Once attached, per-CPU metrics are available at `/sys/fs/bpf/ebpf_probe/core/<cpu_id>`:
+```bash
+# Monitor the Loopback ('lo') and Ethernet ('eth0') interfaces with verbose output
+sudo ./ebpf_probe --interface=lo eth0 --verbose
+```
+
+## Reading CPU Metrics
+
+Once attached, per-CPU metrics are available at `/sys/fs/bpf/ebpf_probe/cpu<cpu>/summary`:
 
 ```bash
 # Single CPU
-cat /sys/fs/bpf/ebpf_probe/core/0
+cat /sys/fs/bpf/ebpf_probe/cpu0/summary
 
 # All CPUs
-cat /sys/fs/bpf/ebpf_probe/core/*
+cat /sys/fs/bpf/ebpf_probe/cpu*/summary
 ```
 
-Each entry contains packet/byte counts alongside hardware counters (cycles, instructions, cache misses) and RAPL energy readings for that core.
+Each entry contains received and transmitted packet/byte counts alongside hardware counters (cycles, instructions, cache misses) and RAPL energy readings for that CPU.
 
 ## Reading RAPL Metrics
 
