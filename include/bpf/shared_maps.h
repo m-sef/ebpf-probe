@@ -28,10 +28,9 @@ struct {
 
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 20); /* Needs to be assigned at runtime to the amount of interfaces passed as command line arguments */
+    __uint(max_entries, 16); /* Needs to be assigned at runtime to the amount of interfaces passed as command line arguments */
     __type(key, unsigned int);
     __type(value, struct interface_stats);
-    __uint(pinning, LIBBPF_PIN_BY_NAME);
 } interface_stats_map SEC(".maps");
 
 /* Updated by 'timer' bpf program */
@@ -40,12 +39,11 @@ struct {
     __uint(max_entries, 1);
     __type(key, __u32);
     __type(value, struct core_map_entry);
-    __uint(pinning, LIBBPF_PIN_BY_NAME);
 } core_stats_map SEC(".maps");
 
 struct {
     __uint(type,  BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 16);
+    __uint(max_entries, 16); /* Also should be assinged at runtime to the amount of perf events available (# passed as command line arguments)*/
     __type(key, unsigned int);
     __type(value, struct bpf_perf_event_value);
 } perf_event_stats_map SEC(".maps");
@@ -56,8 +54,13 @@ struct {
     __uint(max_entries, 5);
     __type(key, __u32);
     __type(value, struct bpf_perf_event_value);
-    __uint(pinning, LIBBPF_PIN_BY_NAME);
 } rapl_stats_map SEC(".maps");
 
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 1); /* SET AT RUNTIME */
+    __type(key, struct perf_event_attr);
+    __type(value, fd_t);
+} event_to_fd_hash_map SEC(".maps");
 
 #endif

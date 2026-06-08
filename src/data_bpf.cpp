@@ -44,6 +44,11 @@ DataBPF::init()
     INFOV("Initialized DataBPF object");
 }
 
+const std::unique_ptr<struct data_bpf, decltype(&data_bpf__destroy)>& DataBPF::bpf() const
+{
+    return _bpf;
+}
+
 void
 DataBPF::_populate_perf_event_map() const
 {

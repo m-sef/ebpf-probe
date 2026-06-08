@@ -141,6 +141,14 @@ read_perf_event_counter(
 }
 
 static inline error_t
+update_perf_event_stats(
+        unsigned int event,
+        unsigned int cpu)
+{
+
+}
+
+static inline error_t
 read_rapl_domain_counter(
         size_t rapl_domain_idx)
 {

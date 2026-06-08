@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "generated/event_iterator.skel.h"
+#include "data_bpf.hpp"
 
 class EventIteratorBPF
 {

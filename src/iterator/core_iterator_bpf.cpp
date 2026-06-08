@@ -3,8 +3,10 @@
 #include <format>
 
 CoreIteratorBPF::CoreIteratorBPF(
+        const DataBPF& data_bpf,
         unsigned int cpu)
-    : _cpu(cpu)
+    : _data_bpf(data_bpf)
+    , _cpu(cpu)
     , _bpf(nullptr, &core_iterator_bpf__destroy)
     , _link(nullptr, &bpf_link__destroy)
 {
@@ -24,6 +26,10 @@ CoreIteratorBPF::init()
         ERROR("Failed to open iterator BPF object for CPU {}", _cpu);
     
     _bpf->rodata->cpu = (__u32)_cpu;
+
+    bpf_map__reuse_fd(
+        _bpf->maps.core_stats_map,
+        bpf_map__fd(_data_bpf.bpf()->maps.core_stats_map));
 
     if (core_iterator_bpf__load(_bpf.get()) != 0)
         ERROR("Failed to load iterator BPF object for CPU {}", _cpu);

@@ -11,12 +11,15 @@
 #include <memory>
 
 #include "generated/rapl_iterator.skel.h"
+#include "data_bpf.hpp"
 #include "definitions.hpp"
 
 class RAPLIteratorBPF
 {
 public:
-    RAPLIteratorBPF(unsigned int domain);
+    RAPLIteratorBPF(
+            const DataBPF& data_bpf,
+            unsigned int domain);
     ~RAPLIteratorBPF();
 
     void init();
@@ -26,6 +29,7 @@ public:
     RAPLIteratorBPF(RAPLIteratorBPF&&) = default;
     RAPLIteratorBPF& operator=(RAPLIteratorBPF&&) = default;
 private:
+    const DataBPF&     _data_bpf;
     const unsigned int _domain;
 
     std::unique_ptr<rapl_iterator_bpf, decltype(&rapl_iterator_bpf__destroy)> _bpf;

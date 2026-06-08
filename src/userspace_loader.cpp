@@ -39,15 +39,18 @@ UserspaceLoader::UserspaceLoader()
 {
     _core_iterators.reserve(_cpu_count);
     FOREACH_CPU(cpu)
-        _core_iterators.emplace_back(cpu);
+        _core_iterators.emplace_back(_data, cpu);
     
     _rapl_iterators.reserve(RAPL_DOMAINS_MAX);
     FOREACH_RAPL_DOMAIN(domain)
-        _rapl_iterators.emplace_back(domain);
+        _rapl_iterators.emplace_back(_data, domain);
     
     FOREACH_CPU(cpu)
-        _interface_iterators.emplace_back(cpu, 1, std::format("/sys/fs/bpf/ebpf_probe/cpu{}/lo", cpu));
-    
+    {
+        std::string pinned_file_path(std::format("/sys/fs/bpf/ebpf_probe/cpu{}/{}", cpu, options.interface));
+
+        _interface_iterators.emplace_back(_data, cpu, options.interface, pinned_file_path);
+    }
 }
 
 UserspaceLoader::~UserspaceLoader()
@@ -56,9 +59,6 @@ UserspaceLoader::~UserspaceLoader()
     _rapl_iterators.clear();
     _interface_iterators.clear();
     _remove_sys_directories();
-    unlink("/sys/fs/bpf/ebpf_probe/core_stats_map");
-    unlink("/sys/fs/bpf/ebpf_probe/rapl_stats_map");
-    unlink("/sys/fs/bpf/ebpf_probe/interface_stats_map");
 }
 
 void

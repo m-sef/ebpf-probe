@@ -5,8 +5,10 @@
 #include "rapl_helpers.hpp"
 
 RAPLIteratorBPF::RAPLIteratorBPF(
+        const DataBPF& data_bpf,
         unsigned int domain)
-    : _domain(domain)
+    : _data_bpf(data_bpf)
+    , _domain(domain)
     , _bpf(nullptr, &rapl_iterator_bpf__destroy)
     , _link(nullptr, &bpf_link__destroy)
 {
@@ -28,6 +30,8 @@ void RAPLIteratorBPF::init()
     strncpy(_bpf->rodata->rapl_domain_name, rapl_domain_names[_domain], sizeof(_bpf->rodata->rapl_domain_name) - 1);
     read_rapl_unit(rapl_domain_names[_domain], _bpf->rodata->unit, sizeof(_bpf->rodata->unit));
     read_rapl_scale(rapl_domain_names[_domain], _bpf->rodata->scale, sizeof(_bpf->rodata->scale));
+
+    bpf_map__reuse_fd(_bpf->maps.rapl_stats_map, bpf_map__fd(_data_bpf.bpf()->maps.rapl_stats_map));
 
     if (rapl_iterator_bpf__load(_bpf.get()) != 0)
         ERROR("Failed to load iterator BPF object for domain {}", _domain);

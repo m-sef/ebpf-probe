@@ -22,6 +22,9 @@ public:
     DataBPF(unsigned int cpu_count);
 
     void init();
+
+    /* TODO: Replace with actual get fd functions */
+    const std::unique_ptr<struct data_bpf, decltype(&data_bpf__destroy)>& bpf() const;
 private:
     void _populate_perf_event_map() const;
     void _populate_perf_event_map_for_cpu(unsigned int cpu) const;

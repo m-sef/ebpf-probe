@@ -11,12 +11,15 @@
 #include <memory>
 
 #include "generated/core_iterator.skel.h"
+#include "data_bpf.hpp"
 #include "definitions.hpp"
 
 class CoreIteratorBPF
 {
 public:
-    CoreIteratorBPF(unsigned int cpu);
+    CoreIteratorBPF(
+            const DataBPF& data_bpf,
+            unsigned int cpu);
     ~CoreIteratorBPF();
 
     void init();
@@ -26,6 +29,7 @@ public:
     CoreIteratorBPF(CoreIteratorBPF&&) = default;
     CoreIteratorBPF& operator=(CoreIteratorBPF&&) = default;
 private:
+    const DataBPF&     _data_bpf;
     const unsigned int _cpu;
 
     std::unique_ptr<core_iterator_bpf, decltype(&core_iterator_bpf__destroy)> _bpf;

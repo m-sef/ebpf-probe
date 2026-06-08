@@ -15,7 +15,7 @@ const volatile unsigned int cpu;
 const volatile unsigned int event;
 
 SEC("iter/bpf_map_elem")
-int dump_perf_stats(struct bpf_iter__bpf_map_elem* context)
+int dump_event_stats(struct bpf_iter__bpf_map_elem* context)
 {
     struct seq_file* seq = context->meta->seq;
 
