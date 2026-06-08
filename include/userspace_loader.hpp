@@ -11,7 +11,7 @@
 #include <memory>
 
 #include "data_bpf.hpp"
-#include "iterator/core_iterator_bpf.hpp"
+#include "iterator/cpu_iterator_bpf.hpp"
 #include "iterator/rapl_iterator_bpf.hpp"
 #include "iterator/interface_iterator_bpf.hpp"
 #include "iterator/event_iterator_bpf.hpp"
@@ -38,7 +38,7 @@ private:
     const unsigned int _cpu_count;
 
     DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs. Also populates perf and rapl event maps */
-    std::vector<CoreIteratorBPF>      _core_iterators; /* Handles per-core iterator BPF programs */
+    std::vector<CPUIteratorBPF>       _core_iterators; /* Handles per-core iterator BPF programs */
     std::vector<RAPLIteratorBPF>      _rapl_iterators; /* Handles per-RAPL domain iterator BPF programs */
     std::vector<InterfaceIteratorBPF> _interface_iterators;
 };

@@ -167,21 +167,25 @@ read_rapl_domain_counter(
 SEC("perf_event")
 int timer(struct bpf_perf_event_data* ctx)
 {
-    __u32 cpu_idx = bpf_get_smp_processor_id();
+    __u32 cpu = bpf_get_smp_processor_id();
     __u32 key = 0;
     struct core_map_entry* core_map_entry_ptr = bpf_map_lookup_elem(&core_stats_map, &key);
     if (!core_map_entry_ptr)
         return 1;
+
+    //FOREACH_PERF_EVENT(key)
+
+    //FOREACH_RAPL_DOMAIN(key)
     
-    read_perf_event_counter(INSTRUCTIONS,   cpu_idx, &core_map_entry_ptr->instructions);
-    read_perf_event_counter(CPU_CYCLES,     cpu_idx, &core_map_entry_ptr->cpu_cycles);
-    read_perf_event_counter(REF_CPU_CYCLES, cpu_idx, &core_map_entry_ptr->ref_cpu_cycles);
-    read_perf_event_counter(CACHE_MISSES,   cpu_idx, &core_map_entry_ptr->cache_misses);
+    read_perf_event_counter(INSTRUCTIONS,   cpu, &core_map_entry_ptr->instructions);
+    read_perf_event_counter(CPU_CYCLES,     cpu, &core_map_entry_ptr->cpu_cycles);
+    read_perf_event_counter(REF_CPU_CYCLES, cpu, &core_map_entry_ptr->ref_cpu_cycles);
+    read_perf_event_counter(CACHE_MISSES,   cpu, &core_map_entry_ptr->cache_misses);
 
     /* RAPL events are opened on CPU 0. bpf_perf_event_read_value uses
      * perf_event_read_local, so reads from any other CPU return 0 and
      * would overwrite the correct value in the shared stats map. */
-    if (cpu_idx != 0)
+    if (cpu != 0)
         return 0;
     
     read_rapl_domain_counter(RAPL_PKG);

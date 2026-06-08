@@ -1,29 +1,29 @@
-#include "iterator/core_iterator_bpf.hpp"
+#include "iterator/cpu_iterator_bpf.hpp"
 
 #include <format>
 
-CoreIteratorBPF::CoreIteratorBPF(
+CPUIteratorBPF::CPUIteratorBPF(
         const DataBPF& data_bpf,
         unsigned int cpu,
         const std::string& file_path)
     : _data_bpf(data_bpf)
     , _cpu(cpu)
     , _pinned_file_path(file_path)
-    , _bpf(nullptr, &core_iterator_bpf__destroy)
+    , _bpf(nullptr, &cpu_iterator_bpf__destroy)
     , _link(nullptr, &bpf_link__destroy)
 {
 
 }
 
-CoreIteratorBPF::~CoreIteratorBPF()
+CPUIteratorBPF::~CPUIteratorBPF()
 {
     std::remove(_pinned_file_path.c_str());
 }
 
 void
-CoreIteratorBPF::init()
+CPUIteratorBPF::init()
 {
-    _bpf.reset(core_iterator_bpf__open());
+    _bpf.reset(cpu_iterator_bpf__open());
     if (_bpf == nullptr)
         ERROR("Failed to open iterator BPF object for CPU {}", _cpu);
     
@@ -33,7 +33,7 @@ CoreIteratorBPF::init()
         _bpf->maps.core_stats_map,
         bpf_map__fd(_data_bpf.bpf()->maps.core_stats_map));
 
-    if (core_iterator_bpf__load(_bpf.get()) != 0)
+    if (cpu_iterator_bpf__load(_bpf.get()) != 0)
         ERROR("Failed to load iterator BPF object for CPU {}", _cpu);
     
     union bpf_iter_link_info linfo = {};

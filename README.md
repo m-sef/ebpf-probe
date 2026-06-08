@@ -33,7 +33,7 @@ ebpf_probe [OPTIONS]
 | `-f FREQUENCY` | `--frequency` | Sample at this frequency per second for each CPU (default: 1) |
 | `-v` | `--verbose` | Verbose output (default: false) |
 
-### Example:
+### Example
 
 ```bash
 # Monitor the Loopback ('lo') and Ethernet ('eth0') interfaces with verbose output
@@ -53,6 +53,17 @@ cat /sys/fs/bpf/ebpf_probe/cpu*/summary
 ```
 
 Each entry contains received and transmitted packet/byte counts alongside hardware counters (cycles, instructions, cache misses) and RAPL energy readings for that CPU.
+
+## Reading Interface Metrics
+per-CPU interface metrics are available at `/sys/fs/bpf/ebpf_probe/cpu<cpu>/<interface>`
+
+```bash
+# Loopback interface on CPU 0
+cat /sys/fs/bpf/ebpf_probe/cpu0/lo
+
+# Loopback interface on all CPUs
+cat /sys/fs/bpf/ebpf_probe/cpu*/lo
+```
 
 ## Reading RAPL Metrics
 

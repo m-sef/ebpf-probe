@@ -23,7 +23,7 @@
 #include <bpf/bpf.h>
 
 #include "generated/data.skel.h"
-#include "generated/core_iterator.skel.h"
+#include "generated/cpu_iterator.skel.h"
 #include "generated/rapl_iterator.skel.h"
 #include "bpf/definitions.h"
 #include "definitions.hpp"

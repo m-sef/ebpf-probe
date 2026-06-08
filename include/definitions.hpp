@@ -20,7 +20,7 @@ typedef struct options {
 
 extern options_t options;
 
-#define INFO_PREFIX "> "
+#define INFO_PREFIX ""
 #define WARNING_PREFIX "[WARNING] "
 
 #define INFO(message, ...) \
