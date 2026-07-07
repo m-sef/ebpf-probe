@@ -2,3 +2,5 @@
 
 sudo apt-get update -y
 sudo apt-get install -y libbpf-dev cmake clang
+
+exit 0
