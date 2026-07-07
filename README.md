@@ -46,11 +46,11 @@ sudo ./ebpf_probe --interface=lo eth0 --verbose
 Once attached, per-CPU metrics are available at `/sys/fs/bpf/ebpf_probe/cpu<cpu>/summary`:
 
 ```bash
-# Single CPU
-cat /sys/fs/bpf/ebpf_probe/cpu0/summary
+# CPU 0
+sudo cat /sys/fs/bpf/ebpf_probe/cpu0/summary
 
 # All CPUs
-cat /sys/fs/bpf/ebpf_probe/cpu*/summary
+sudo bash -c 'cat /sys/fs/bpf/ebpf_probe/cpu*/summary'
 ```
 
 Each entry contains received and transmitted packet/byte counts alongside hardware counters (cycles, instructions, cache misses).
@@ -60,10 +60,10 @@ per-CPU interface metrics are available at `/sys/fs/bpf/ebpf_probe/cpu<cpu>/<int
 
 ```bash
 # Loopback interface on CPU 0
-cat /sys/fs/bpf/ebpf_probe/cpu0/lo
+sudo cat /sys/fs/bpf/ebpf_probe/cpu0/lo
 
 # Loopback interface on all CPUs
-cat /sys/fs/bpf/ebpf_probe/cpu*/lo
+sudo bash -c 'cat /sys/fs/bpf/ebpf_probe/cpu*/lo'
 ```
 
 ## Reading RAPL Metrics
