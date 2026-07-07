@@ -1,15 +1,29 @@
 # ebpf-probe/scripts
 
-## cat_all_cpus.sh
+## gather_cpu_metrics.sh
+
+Gathers CPU metrics and logs them under `/tmp/ebpf-probe/cpu.log`
+
+### Usage
 
 ```bash
-cat /sys/fs/bpf/ebpf_probe/cpu*/summary | column -t -s,
+gather_cpu_metrics DURATION
+
+# Example - Gather for 10 seconds
+./gather_cpu_metrics 10
 ```
 
-## cat_all_domains.sh
+## gether_rapl_metrics.sh
+
+Gathers RAPL metrics and logs them under `/tmp/ebpf-probe/rapl.log`
+
+### Usage
 
 ```bash
-cat /sys/fs/bpf/ebpf_probe/rapl/* | column -t -s,
+gather_rapl_metrics DURATION
+
+# Example - Gather for 10 seconds
+./gather_rapl_metrics 10
 ```
 
 ## install_dependencies.sh
@@ -18,8 +32,3 @@ cat /sys/fs/bpf/ebpf_probe/rapl/* | column -t -s,
 sudo apt-get update -y
 sudo apt-get install -y libbpf-dev cmake clang
 ```
-
-## log_cores.py
-
-OUTDATED
-* TODO - Rewrite this script to properly handle new sys file directory
