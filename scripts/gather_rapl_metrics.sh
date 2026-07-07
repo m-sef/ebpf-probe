@@ -9,7 +9,7 @@ mkdir -p "$LOG_FOLDER_PATH"
 (
     END=$(( $(date +%s) + DURATION ))
     while [ "$(date +%s)" -lt "$END" ]; do
-        sudo bash -c 'cat /sys/fs/bpf/ebpf_probe/rapl/*' | column -t -s, >> "$LOG_FOLDER_PATH/rapl.log" 2>/dev/null
+        sudo bash -c 'cat /sys/fs/bpf/ebpf_probe/rapl/*' >> "$LOG_FOLDER_PATH/rapl.log" 2>/dev/null
         sleep 1
     done
 ) &
