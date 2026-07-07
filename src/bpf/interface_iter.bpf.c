@@ -30,9 +30,11 @@ int dump_interface_stats(struct bpf_iter__bpf_map_elem* context)
     if (ptr == NULL)
         return 0;
     
-    PRINTF("#cpu,interface,rx_packets,rx_bytes,tx_packets,tx_bytes\n");
-    PRINTF("%ld,%s,%ld,%ld,%ld,%ld\n", 
-        cpu, interface_name, 
+    __u64 timestamp_ns = bpf_ktime_get_ns();
+    
+    PRINTF("#timestamp_ns,cpu,interface,rx_packets,rx_bytes,tx_packets,tx_bytes\n");
+    PRINTF("%llu,%ld,%s,%ld,%ld,%ld,%ld\n", 
+        timestamp_ns, cpu, interface_name, 
         ptr->rx_packets, ptr->rx_bytes,
         ptr->tx_packets, ptr->tx_bytes);
     

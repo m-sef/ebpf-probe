@@ -25,7 +25,7 @@ int dump_event_stats(struct bpf_iter__bpf_map_elem* context)
     if (*((unsigned int*)context->key) != cpu)
         return 0;
     
-    PRINTF("#event,counter,enabled,running\n");
+    //PRINTF("#timestamp_ns,event,counter,enabled,running\n");
     
     return 0;
 }

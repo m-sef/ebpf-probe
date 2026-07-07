@@ -40,8 +40,10 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
     if (!ptr)
         return 0;
     
-    PRINTF("#domain,counter,unit,scale\n");
-    PRINTF("%s,%llu,%s,%s\n", rapl_domain_name, ptr->counter, unit, scale);
+    __u64 timestamp_ns = bpf_ktime_get_ns();
+    
+    //PRINTF("#timestamp_ns,domain,counter,unit,scale\n");
+    PRINTF("%llu,%s,%llu,%s,%s\n", timestamp_ns, rapl_domain_name, ptr->counter, unit, scale);
     
     return 0;
 }
