@@ -176,7 +176,7 @@ DataBPF::_attach_timer_for_cpu(
     {
         if (errno == ENODEV)
         {
-            WARNING("CPU {} is offline, skipping timer attachment\n", cpu);
+            WARNING("CPU {} is offline, skipping timer attachment", cpu);
             return;
         }
 
