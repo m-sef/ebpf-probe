@@ -7,6 +7,7 @@ DURATION=$1
 mkdir -p "$LOG_FOLDER_PATH"
 
 (
+    > "$LOG_FOLDER_PATH/cpu.log"
     END=$(( $(date +%s) + DURATION ))
     while [ "$(date +%s)" -lt "$END" ]; do
         sudo bash -c 'cat /sys/fs/bpf/ebpf_probe/cpu*/summary' >> "$LOG_FOLDER_PATH/cpu.log" 2>/dev/null
