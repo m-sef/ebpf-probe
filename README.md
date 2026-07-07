@@ -10,8 +10,9 @@ A low-overhead eBPF-based monitoring program designed to collect and expose low-
 ## Setup
 
 ```bash
-# Install dependencies (run once)
-sudo ./scripts/install_dependencies.sh
+# Dependencies
+sudo apt-get update -y
+sudo apt-get install -y libbpf-dev cmake clang
 
 # Build
 mkdir build
