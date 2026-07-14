@@ -35,8 +35,10 @@ handle_signal_interrupt(
 
 int main(int argc, char** argv)
 {
-    signal(SIGINT, handle_signal_interrupt);
-    
+    signal(SIGINT,  handle_signal_interrupt);
+    signal(SIGTERM, handle_signal_interrupt);
+    signal(SIGHUP,  handle_signal_interrupt);
+
     CLI::App app{DESCRIPTION, NAME};
 
     app.add_option("-i,--interface", options.interface, 
