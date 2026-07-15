@@ -173,9 +173,7 @@ int timer(struct bpf_perf_event_data* ctx)
     if (!core_map_entry_ptr)
         return 1;
 
-    //FOREACH_PERF_EVENT(key)
-
-    //FOREACH_RAPL_DOMAIN(key)
+    last_sample_timestamp_ns = bpf_ktime_get_ns();
     
     read_perf_event_counter(INSTRUCTIONS,   cpu, &core_map_entry_ptr->instructions);
     read_perf_event_counter(CPU_CYCLES,     cpu, &core_map_entry_ptr->cpu_cycles);

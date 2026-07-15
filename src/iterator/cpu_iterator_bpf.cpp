@@ -33,6 +33,10 @@ CPUIteratorBPF::init()
         _bpf->maps.core_stats_map,
         bpf_map__fd(_data_bpf.bpf()->maps.core_stats_map));
 
+    bpf_map__reuse_fd(
+        _bpf->maps.bss,
+        bpf_map__fd(_data_bpf.bpf()->maps.bss));
+
     if (cpu_iterator_bpf__load(_bpf.get()) != 0)
         ERROR("Failed to load iterator BPF object for CPU {}", _cpu);
     

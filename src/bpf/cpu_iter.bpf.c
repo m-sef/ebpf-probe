@@ -26,7 +26,7 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
     if (ptr == NULL)
         return 0;
     
-    __u64 timestamp_ns = bpf_ktime_get_ns();
+    __u64 timestamp_ns = last_sample_timestamp_ns;
 
     //PRINTF("#timestamp_ns,core,event,counter,enabled,running\n");
     PRINTF("%llu,%ld,rx_packets,%llu,N/A,N/A\n", timestamp_ns, cpu, ptr->interface.rx_packets);
