@@ -8,7 +8,7 @@ FREQUENCY=$2
 mkdir -p "$LOG_FOLDER_PATH"
 
 (
-    > "$LOG_FOLDER_PATH/cpu.log"
+    > "$LOG_FOLDER_PATH/summary.log"
     END=$(( $(date +%s) + DURATION ))
     while [ "$(date +%s)" -lt "$END" ]; do
         sudo bash -c 'cat /sys/fs/bpf/ebpf_probe/cpu*/summary' >> "$LOG_FOLDER_PATH/summary.log" 2>/dev/null
