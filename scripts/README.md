@@ -2,28 +2,34 @@
 
 ## gather_cpu_metrics.sh
 
-Gathers CPU metrics and logs them under `/tmp/ebpf-probe/cpu.log`
+Gathers CPU metrics and logs them under `/tmp/ebpf_probe/summary.log`
 
 ### Usage
 
 ```bash
-gather_cpu_metrics DURATION
+gather_cpu_metrics DURATION FREQUENCY
 
-# Example - Gather for 10 seconds
-./gather_cpu_metrics 10
+# Example - Gather for 10 seconds, sampling 20 times per second
+./gather_cpu_metrics 10 20
+
+# Read log file
+cat /tmp/ebpf_probe/summary.log
 ```
 
 ## gether_rapl_metrics.sh
 
-Gathers RAPL metrics and logs them under `/tmp/ebpf-probe/rapl.log`
+Gathers RAPL metrics and logs them under `/tmp/ebpf_probe/rapl.log`
 
 ### Usage
 
 ```bash
-gather_rapl_metrics DURATION
+gather_rapl_metrics DURATION FREQUENCY
 
-# Example - Gather for 10 seconds
-./gather_rapl_metrics 10
+# Example - Gather for 10 seconds, sampling 20 times per second
+./gather_rapl_metrics 10 20
+
+# Read log file
+cat /tmp/ebpf_probe/rapl.log
 ```
 
 ## install_dependencies.sh
