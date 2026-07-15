@@ -46,7 +46,7 @@ int main(int argc, char** argv)
         ->required();
     app.add_option("-f,--frequency", options.frequency,
         "Sample at this frequency per second for each CPU")
-        ->default_val(1);
+        ->default_val(20);
     app.add_flag("-v,--verbose", options.verbose,
         "Enable verbose output")
         ->default_val(false);
