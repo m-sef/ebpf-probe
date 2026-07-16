@@ -1,6 +1,6 @@
 CLAUDE.md
 /.vscode
-/venv
+/.venv
 /build
 
 /include/generated/*
