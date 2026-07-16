@@ -32,7 +32,7 @@ sudo docker exec ${CONTAINER_NAME} taskset -c 0 mutilate --binary -s 10.10.1.1:1
 ```bash
 # Pull and run memcached docker image
 sudo docker pull memcached:1.6-alpine
-sudo docker run -d -p 11211:11211 memcached:1.6-alpine
+sudo docker run -d -p 11211:11211 memcached:1.6-alpine -t 20 -m 32G -c 8192 -b 8192 -p 11211 -u nobody -B binary
 
 # Run eBPF Probe on the node's main interface and set sample frequency to 6000 times a second
 sudo ./build/ebpf_probe --interface=enp6s0f0 --frequency=6000
