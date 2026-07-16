@@ -19,7 +19,7 @@ __CPU Governer is set "performance" on all nodes__
 sudo docker pull ghcr.io/m-sef/mutilate:latest
 
 # 'Sleep infinity' so that this container can be used later using 'docker exec'
-sudo docker run -d -p 5556:5556 ghcr.io/m-sef/mutilate:latest sleep infinity
+sudo docker run --detach --network host ghcr.io/m-sef/mutilate:latest sleep infinity
 
 # Load key, value pairs on Memcached server
 sudo docker exec ${CONTAINER_NAME} taskset -c 0 mutilate -vv --binary -s 10.10.1.1:11211 --loadonly -K fb_key -V fb_value
@@ -32,7 +32,7 @@ sudo docker exec ${CONTAINER_NAME} taskset -c 0 mutilate --binary -s 10.10.1.1:1
 ```bash
 # Pull and run memcached docker image
 sudo docker pull memcached:1.6-alpine
-sudo docker run -d -p 11211:11211 memcached:1.6-alpine -t 20 -m 32G -c 8192 -b 8192 -p 11211 -u nobody -B binary
+sudo docker run --detach --network host memcached:1.6-alpine -t 20 -m 32G -c 8192 -b 8192 -p 11211 -u nobody -B binary
 
 # Run eBPF Probe on the node's main interface and set sample frequency to 6000 times a second
 sudo ./build/ebpf_probe --interface=enp6s0f0 --frequency=6000
@@ -44,5 +44,5 @@ sudo ./build/ebpf_probe --interface=enp6s0f0 --frequency=6000
 sudo docker pull ghcr.io/m-sef/mutilate:latest
 
 # Run mutilate workload generator as agent
-sudo docker run -d -p 5556:5556 ghcr.io/m-sef/mutilate:latest mutilate --agentmode --threads=16
+sudo docker run --detach --network host ghcr.io/m-sef/mutilate:latest mutilate --agentmode --threads=16
 ```
