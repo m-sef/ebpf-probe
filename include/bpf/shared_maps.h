@@ -43,7 +43,7 @@ struct {
 
 struct {
     __uint(type,  BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 16); /* Also should be assinged at runtime to the amount of perf events available (# passed as command line arguments)*/
+    __uint(max_entries, 16); /* Also should be assinged at runtime to the amount of perf events available */
     __type(key, unsigned int);
     __type(value, struct bpf_perf_event_value);
 } perf_event_stats_map SEC(".maps");
