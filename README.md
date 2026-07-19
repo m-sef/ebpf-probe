@@ -34,6 +34,16 @@ ebpf_probe [OPTIONS]
 | `-f FREQUENCY` | `--frequency` | Sample at this frequency per second for each CPU (default: 1) |
 | `-v` | `--verbose` | Verbose output (default: false) |
 
+```
+Description
+
+ebpf_probe [OPTIONS]
+
+Arguments:
+--interface=lo,eth0
+--event=instructions,ref_cpu_cycles,cpu_cycles,energy-pkg
+```
+
 ### Example
 
 ```bash

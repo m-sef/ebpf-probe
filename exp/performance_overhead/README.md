@@ -1,4 +1,6 @@
-# ebpf-probe/exp/memcached
+# ebpf-probe/exp/performance_overhead
+
+Observing the performance overhead of running and not running eBPF Probe alongside a Memcached server, using Mutilate as a workload generator.
 
 ## Notes
 
@@ -13,7 +15,7 @@ __Hyperthreading and Turbo Boost is disabled on all nodes, irqbalance is untouch
 
 __CPU Governer is set "performance" on all nodes__
 
-## master
+### master
 ```bash
 # Pull mutilate workload generator docker image
 sudo docker pull ghcr.io/m-sef/mutilate:latest
@@ -28,17 +30,17 @@ sudo docker exec ${CONTAINER_NAME} taskset -c 0 mutilate -vv --binary -s 10.10.1
 sudo docker exec ${CONTAINER_NAME} taskset -c 0 mutilate --binary -s 10.10.1.1:11211 --noload --agent={10.10.1.2,10.10.1.3} --threads=1 --keysize=fb_key --valuesize=fb_value --iadist=fb_ia --update=0.25 --depth=128 --measure_connections=32 --qps=100000 --time=30
 ```
 
-## worker0
+### worker0
 ```bash
 # Pull and run memcached docker image
 sudo docker pull memcached:1.6-alpine
 sudo docker run --detach --network host memcached:1.6-alpine -t 20 -m 32G -c 8192 -b 8192 -p 11211 -u nobody -B binary
 
 # Run eBPF Probe on the node's main interface and set sample frequency to 6000 times a second
-sudo ./build/ebpf_probe --interface=enp6s0f0 --frequency=6000
+sudo ./build/ebpf_probe --interface=${WORKER0_IF} --frequency=6000
 ```
 
-## worker1 & worker2
+### worker1 & worker2
 ```bash
 # Pull mutilate workload generator docker image
 sudo docker pull ghcr.io/m-sef/mutilate:latest

@@ -20,8 +20,8 @@ typedef struct options {
 
 extern options_t options;
 
-#define INFO_PREFIX ""
-#define WARNING_PREFIX "[WARNING] "
+#define INFO_PREFIX std::format("[{} INFO] ", __FILE_NAME__)
+#define WARNING_PREFIX std::format("[{} WARNING] ", __FILE_NAME__)
 
 #define INFO(message, ...) \
 do { \
