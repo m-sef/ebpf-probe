@@ -24,7 +24,9 @@ def main() -> None:
         if "rapl" in subpath.name:
             continue
 
-        iterator_paths.append(subpath / "summary")
+        summary_path = subpath / "summary"
+        if summary_path.exists():
+            iterator_paths.append(summary_path)
 
     # GC pauses are a major source of jitter at ms-scale sampling rates.
     gc.disable()
