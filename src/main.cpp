@@ -22,7 +22,12 @@ under /sys/fs/bpf/ebpf_probe/ and can be read with standard shell tools."
 
 #define NAME "ebpf_probe"
 
-options_t options = {};
+options_t options = {
+    .interface       = {},
+    .event           = { "instructions", "cpu-cycles", "ref-cpu-cycles", "cache-misses" },
+    .rapl            = { "pkg", "cores", "uncore", "ram", "psys" },
+    .sample_interval = 1000,
+};
 
 static volatile sig_atomic_t running = true;
 
@@ -38,18 +43,29 @@ int main(int argc, char** argv)
     signal(SIGINT,  handle_signal_interrupt);
     signal(SIGTERM, handle_signal_interrupt);
     signal(SIGHUP,  handle_signal_interrupt);
+    signal(SIGQUIT, handle_signal_interrupt);
 
     CLI::App app{DESCRIPTION, NAME};
 
     app.add_option("-i,--interface", options.interface, 
         "Monitor the network traffic on this interface(s)")
         ->required();
+    app.add_option("-e,--event", options.event,
+        "Events")
+        ->capture_default_str();
+    app.add_option("-r,--rapl", options.rapl,
+        "RAPL")
+        ->capture_default_str();
     app.add_option("-f,--frequency", options.frequency,
         "Sample at this frequency per second for each CPU")
         ->default_val(20);
     app.add_flag("-v,--verbose", options.verbose,
         "Enable verbose output")
         ->default_val(false);
+    
+    app.add_option("-s,--sample-interval", options.sample_interval,
+        "Sample interval (milliseconds)")
+        ->default_val(1000);
     
     CLI11_PARSE(app, argc, argv);
 

@@ -127,6 +127,20 @@ int tcx_egress(struct __sk_buff* context)
 }
 
 static __always_inline error_t
+update_perf_event_stats(
+        unsigned int event,
+        struct bpf_perf_event_value* value)
+{
+    struct bpf_perf_event_value* ptr = bpf_map_lookup_elem(&perf_event_stats_map, &event);
+    if (!ptr)
+        return 1;
+
+    *ptr = *value;
+
+    return 0;
+}
+
+static __always_inline error_t
 read_perf_event_counter(
         size_t perf_event_type,
         size_t cpu_idx,
@@ -137,15 +151,9 @@ read_perf_event_counter(
     if (bpf_perf_event_read_value(&perf_event_map, key, value, sizeof(*value)) < 0)
         return 1;
 
+    update_perf_event_stats(perf_event_type, value);
+
     return 0;
-}
-
-static __always_inline error_t
-update_perf_event_stats(
-        unsigned int event,
-        unsigned int cpu)
-{
-
 }
 
 static __always_inline error_t

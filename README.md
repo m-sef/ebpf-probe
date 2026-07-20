@@ -42,6 +42,8 @@ ebpf_probe [OPTIONS]
 Arguments:
 --interface=lo,eth0
 --event=instructions,ref_cpu_cycles,cpu_cycles,energy-pkg
+
+Example: sudo ./ebpf_probe --interface=lo,eth0 --event=instructions,ref_cpu_cycles,cpu_cycles --rapl=pkg,core --sample-interval=1 --verbose-logs
 ```
 
 ### Example

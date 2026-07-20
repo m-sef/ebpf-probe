@@ -34,11 +34,11 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
     PRINTF("%ld,tx_bytes,%llu,N/A,N/A\n",   cpu, ptr->interface.tx_bytes);
     PRINTF("%ld,instructions,%ld,%ld,%ld\n", cpu,
         ptr->instructions.counter, ptr->instructions.enabled, ptr->instructions.running);
-    PRINTF("%ld,cpu_cycles,%ld,%ld,%ld\n", cpu,
+    PRINTF("%ld,cpu-cycles,%ld,%ld,%ld\n", cpu,
         ptr->cpu_cycles.counter, ptr->cpu_cycles.enabled, ptr->cpu_cycles.running);
-    PRINTF("%ld,ref_cpu_cycles,%ld,%ld,%ld\n", cpu,
+    PRINTF("%ld,ref-cpu-cycles,%ld,%ld,%ld\n", cpu,
         ptr->ref_cpu_cycles.counter, ptr->ref_cpu_cycles.enabled, ptr->ref_cpu_cycles.running);
-    PRINTF("%ld,cache_misses,%ld,%ld,%ld\n", cpu,
+    PRINTF("%ld,cache-misses,%ld,%ld,%ld\n", cpu,
         ptr->cache_misses.counter, ptr->cache_misses.enabled, ptr->cache_misses.running);
     
     return 0;

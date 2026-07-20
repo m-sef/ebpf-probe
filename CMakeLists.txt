@@ -91,7 +91,7 @@ add_custom_command(
         -I${CMAKE_SOURCE_DIR}/include
         -c ${BPF_EVENT_ITER_SOURCE}
         -o ${BPF_EVENT_ITER_OBJECT}
-    DEPENDS ${BPF_INTERFACE_ITER_SOURCE} ${VMLINUX_HEADER}
+    DEPENDS ${BPF_EVENT_ITER_SOURCE} ${VMLINUX_HEADER}
 )
 
 add_custom_target(bpf_data_object           ALL DEPENDS ${VMLINUX_HEADER} ${BPF_DATA_OBJECT})

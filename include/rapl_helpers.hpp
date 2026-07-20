@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <unordered_map>
+#include <string>
+
 enum rapl_domains {
     RAPL_PKG    = 0,
     RAPL_CORE   = 1,
@@ -19,12 +22,20 @@ enum rapl_domains {
     RAPL_DOMAINS_MAX,
 };
 
-static const char* rapl_domain_names[] = {
+[[maybe_unused]] static const char* rapl_domain_names[] = {
 	[RAPL_PKG]    = "pkg",
 	[RAPL_CORE]   = "cores",
 	[RAPL_UNCORE] = "uncore",
 	[RAPL_DRAM]   = "ram",
 	[RAPL_PSYS]   = "psys",
+};
+
+inline std::unordered_map<std::string, enum rapl_domains> rapl_domain_name_to_domain = {
+	{"pkg",    RAPL_PKG},
+	{"cores",  RAPL_CORE},
+	{"uncore", RAPL_UNCORE},
+	{"ram",    RAPL_DRAM},
+	{"psys",   RAPL_PSYS},
 };
 
 inline int

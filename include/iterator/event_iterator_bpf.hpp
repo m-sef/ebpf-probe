@@ -10,18 +10,19 @@
 class EventIteratorBPF
 {
 public:
-    EventIteratorBPF(unsigned int cpu, unsigned int event, const std::string& file_path);
+    EventIteratorBPF(const DataBPF& data_bpf, unsigned int cpu, const std::string& event_name, const std::string& file_path);
     ~EventIteratorBPF();
 
     void init();
 
     EventIteratorBPF(const EventIteratorBPF& other) = delete;
     EventIteratorBPF& operator=(const EventIteratorBPF& other) = delete;
-    EventIteratorBPF(EventIteratorBPF&& other) = delete;
-    EventIteratorBPF& operator=(EventIteratorBPF&& other) = delete;
+    EventIteratorBPF(EventIteratorBPF&& other) = default;
+    EventIteratorBPF& operator=(EventIteratorBPF&& other) = default;
 private:
+    const DataBPF& _data_bpf;
     const unsigned int _cpu;
-    const unsigned int _event;
+    const std::string _event_name;
     const std::string _pinned_file_path;
 
     std::unique_ptr<struct event_iterator_bpf, decltype(&event_iterator_bpf__destroy)> _bpf;

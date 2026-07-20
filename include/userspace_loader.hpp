@@ -37,10 +37,11 @@ private:
 
     const unsigned int _cpu_count;
 
-    DataBPF _data; /* Handles attaching xdp_ingress, tcx_egress, and timer BPF programs. Also populates perf and rapl event maps */
-    std::vector<CPUIteratorBPF>       _core_iterators; /* Handles per-core iterator BPF programs */
-    std::vector<RAPLIteratorBPF>      _rapl_iterators; /* Handles per-RAPL domain iterator BPF programs */
+    DataBPF _data;
+    std::vector<CPUIteratorBPF>       _core_iterators;
     std::vector<InterfaceIteratorBPF> _interface_iterators;
+    std::vector<EventIteratorBPF>     _event_iterators;
+    std::vector<RAPLIteratorBPF>      _rapl_iterators;
 };
 
 #endif

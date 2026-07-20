@@ -3,6 +3,9 @@
 
 #include <linux/perf_event.h>
 
+#include <unordered_map>
+#include <string>
+
 #define FOREACH_PERF_EVENT(i) for (size_t i = 0; i < NUM_EVENT_TYPES; i++)
 
 enum perf_events {
@@ -17,7 +20,7 @@ enum perf_events {
 	NUM_EVENT_TYPES,
 };
 
-static struct perf_event_attr perf_events[] = {
+[[maybe_unused]] static struct perf_event_attr perf_events[] = {
     [CPU_CYCLES]          = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CPU_CYCLES},
     [INSTRUCTIONS]        = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_INSTRUCTIONS},
     [CACHE_REFERENCES]    = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_CACHE_REFERENCES},
@@ -28,7 +31,7 @@ static struct perf_event_attr perf_events[] = {
     [REF_CPU_CYCLES]      = {.type = PERF_TYPE_HARDWARE, .config = PERF_COUNT_HW_REF_CPU_CYCLES},
 };
 
-static const char* perf_event_names[] = {
+[[maybe_unused]] static const char* perf_event_names[] = {
     [CPU_CYCLES]          = "cpu-cycles",
     [INSTRUCTIONS]        = "instructions",
     [CACHE_REFERENCES]    = "cache-references",
@@ -37,6 +40,17 @@ static const char* perf_event_names[] = {
     [BRANCH_MISSES]       = "branch-misses",
     [BUS_CYCLES]          = "bus-cycles",
     [REF_CPU_CYCLES]      = "ref-cycles",
+};
+
+inline std::unordered_map<std::string, enum perf_events> perf_event_name_to_event_id = {
+    {"cpu-cycles",          CPU_CYCLES},
+    {"instructions",        INSTRUCTIONS},
+    {"cache-references",    CACHE_REFERENCES},
+    {"cache-misses",        CACHE_MISSES},
+    {"branch-instructions", BRANCH_INSTRUCTIONS},
+    {"branch-misses",       BRANCH_MISSES},
+    {"bus-cycles",          BUS_CYCLES},
+    {"ref-cycles",          REF_CPU_CYCLES},
 };
 
 #endif

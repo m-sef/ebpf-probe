@@ -14,6 +14,9 @@
 
 typedef struct options {
     std::vector<std::string> interface;
+    std::vector<std::string> event;
+    std::vector<std::string> rapl;
+    int sample_interval;
     int frequency;
     bool verbose;
 } options_t;
