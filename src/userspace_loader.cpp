@@ -100,15 +100,15 @@ make_directory(
         switch (errno)
         {
         case EEXIST:
-            WARNING("Failed to make directory {}, already exists.", directory_path);
+            WARNING("Failed to make directory {}; directory already exists", directory_path);
             break;
         
         case EACCES:
-            ERROR("Failed to make directory {}, permission denied.", directory_path);
+            ERROR("Failed to make directory {}; permission denied", directory_path);
             exit(EXIT_FAILURE);
         
         case ENOENT:
-            ERROR("Failed to make directory {}, parent directory does not exist.", directory_path);
+            ERROR("Failed to make directory {}; parent directory does not exist", directory_path);
             exit(EXIT_FAILURE);
         
         default:
@@ -122,7 +122,6 @@ void
 UserspaceLoader::_create_sys_directories()
 {
     make_directory("/sys/fs/bpf/ebpf_probe",      0x700);
-    //make_directory("/sys/fs/bpf/ebpf_probe/core", 0x700);
     make_directory("/sys/fs/bpf/ebpf_probe/rapl", 0x700);
 
     FOREACH_CPU(cpu)
