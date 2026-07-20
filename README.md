@@ -18,7 +18,7 @@ sudo apt-get install -y libbpf-dev cmake clang
 mkdir build
 cd build
 cmake ..
-make
+make --jobs
 ```
 
 ## Usage
@@ -86,6 +86,16 @@ cat /sys/fs/bpf/ebpf_probe/rapl/pkg
 
 # All domains
 cat /sys/fs/bpf/ebpf_probe/rapl/*
+```
+
+## Debugging
+
+```bash
+# Object dump
+llvm-objdump --disassemble --no-show-raw-insn ${BPF_OBJECT}
+
+# Read ELF
+llvm-readelf ${BPF_OBJECT}
 ```
 
 ## License
