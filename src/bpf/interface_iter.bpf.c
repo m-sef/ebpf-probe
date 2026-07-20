@@ -20,21 +20,21 @@ int dump_interface_stats(struct bpf_iter__bpf_map_elem* context)
 {
     struct seq_file* seq = context->meta->seq;
 
-    if (context->key == NULL)
+    void* key_ptr = context->key;
+    if (key_ptr == NULL)
         return 0;
     
-    if (*((unsigned int*)context->key) != cpu)
+    if (*((unsigned int*)key_ptr) != cpu)
         return 0;
     
     struct interface_stats* ptr = bpf_map_lookup_percpu_elem(&interface_stats_map, &ifindex, cpu);
     if (ptr == NULL)
         return 0;
-    
-    __u64 timestamp_ns = last_sample_timestamp_ns;
-    
-    //PRINTF("#timestamp_ns,cpu,interface,rx_packets,rx_bytes,tx_packets,tx_bytes\n");
-    PRINTF("%llu,%ld,%s,%ld,%ld,%ld,%ld\n", 
-        timestamp_ns, cpu, interface_name, 
+
+    // Output CSV Columns
+    // cpu, interface, rx_packets, rx_bytes, tx_packets, tx_bytes
+    PRINTF("%ld,%s,%ld,%ld,%ld,%ld\n", 
+        cpu, interface_name, 
         ptr->rx_packets, ptr->rx_bytes,
         ptr->tx_packets, ptr->tx_bytes);
     

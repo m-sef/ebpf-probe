@@ -40,10 +40,6 @@ void InterfaceIteratorBPF::init()
     bpf_map__reuse_fd(
             _bpf->maps.interface_stats_map,
             bpf_map__fd(_data_bpf.bpf()->maps.interface_stats_map));
-    
-    bpf_map__reuse_fd(
-        _bpf->maps.bss,
-        bpf_map__fd(_data_bpf.bpf()->maps.bss));
 
     if (interface_iterator_bpf__load(_bpf.get()) != 0)
         ERROR("Failed to load iterator BPF object for CPU {}, interface '{}'", _cpu, _interface_name);

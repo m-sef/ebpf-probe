@@ -29,21 +29,20 @@ int dump_counters(struct bpf_iter__bpf_map_elem* context)
 {
     struct seq_file* seq = context->meta->seq;
 
-    if (context->key == NULL)
+    void* key_ptr = context->key;
+    if (key_ptr == NULL)
         return 0;
     
-    if (*((__u32*)context->key) != domain)
+    if (*((__u32*)key_ptr) != domain)
         return 0;
     
-    __u32 key = domain;
-    struct bpf_perf_event_value* ptr = bpf_map_lookup_elem(&rapl_stats_map, &key);
+    struct bpf_perf_event_value* ptr = bpf_map_lookup_elem(&rapl_stats_map, &domain);
     if (!ptr)
         return 0;
     
-    __u64 timestamp_ns = bpf_ktime_get_ns();
-    
-    //PRINTF("#timestamp_ns,domain,counter,unit,scale\n");
-    PRINTF("%llu,%s,%llu,%s,%s\n", timestamp_ns, rapl_domain_name, ptr->counter, unit, scale);
+    // Output CSV Columns
+    // domain, counter, unit, scale
+    PRINTF("%s,%llu,%s,%s\n", rapl_domain_name, ptr->counter, unit, scale);
     
     return 0;
 }

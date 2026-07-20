@@ -17,7 +17,7 @@
  * @param rx_packets 
  * @param rx_bytes 
  */
-static inline void
+static __always_inline void
 increment_core_stats_rx_counters(
         __u64 rx_packets,
         __u64 rx_bytes)
@@ -38,7 +38,7 @@ increment_core_stats_rx_counters(
  * @param tx_packets 
  * @param tx_bytes 
  */
-static inline void
+static __always_inline void
 increment_core_stats_tx_counters(
         __u64 tx_packets,
         __u64 tx_bytes)
@@ -59,7 +59,7 @@ increment_core_stats_tx_counters(
  * @param rx_packets 
  * @param rx_bytes 
  */
-static inline void
+static __always_inline void
 increment_interface_stats_rx_counters(
         unsigned int ifindex,
         __u64 rx_packets,
@@ -80,7 +80,7 @@ increment_interface_stats_rx_counters(
  * @param tx_packets 
  * @param tx_bytes 
  */
-static inline void
+static __always_inline void
 increment_interface_stats_tx_counters(
         unsigned int ifindex,
         __u64 tx_packets,
@@ -126,7 +126,7 @@ int tcx_egress(struct __sk_buff* context)
     return TCX_PASS;
 }
 
-static inline error_t
+static __always_inline error_t
 read_perf_event_counter(
         size_t perf_event_type,
         size_t cpu_idx,
@@ -140,7 +140,7 @@ read_perf_event_counter(
     return 0;
 }
 
-static inline error_t
+static __always_inline error_t
 update_perf_event_stats(
         unsigned int event,
         unsigned int cpu)
@@ -148,7 +148,7 @@ update_perf_event_stats(
 
 }
 
-static inline error_t
+static __always_inline error_t
 read_rapl_domain_counter(
         size_t rapl_domain_idx)
 {
@@ -172,8 +172,6 @@ int timer(struct bpf_perf_event_data* ctx)
     struct core_map_entry* core_map_entry_ptr = bpf_map_lookup_elem(&core_stats_map, &key);
     if (!core_map_entry_ptr)
         return 1;
-
-    last_sample_timestamp_ns = bpf_ktime_get_ns();
     
     read_perf_event_counter(INSTRUCTIONS,   cpu, &core_map_entry_ptr->instructions);
     read_perf_event_counter(CPU_CYCLES,     cpu, &core_map_entry_ptr->cpu_cycles);

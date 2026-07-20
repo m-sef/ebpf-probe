@@ -53,6 +53,4 @@ enum rapl_domains {
     RAPL_DOMAINS_MAX,
 };
 
-volatile __u64 last_sample_timestamp_ns;
-
 #endif
