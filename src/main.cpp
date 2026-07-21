@@ -72,16 +72,10 @@ int main(int argc, char** argv)
     UserspaceLoader userspace_loader;
     userspace_loader.init();
 
-    try {
-        while (running)
-            pause();
+    while (running)
+        pause();
     
-        puts("");
-    }
-    catch (const std::runtime_error& err) {
-        std::cout << std::format("[{} ERROR] {}", __FILE_NAME__, err.what()) << std::endl;
-        return EXIT_FAILURE;
-    }
+    puts("");
 
     return EXIT_SUCCESS;
 }
