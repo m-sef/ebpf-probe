@@ -57,22 +57,11 @@ UserspaceLoader::UserspaceLoader()
         }
     }
 
-    /* Initialize all EventIteratorBPF objects */
-    _event_iterators.reserve(_cpu_count * options.event.size());
-    FOREACH_CPU(cpu)
-    {
-        for (const std::string& event_name : options.event)
-        {
-            std::string pinned_file_path(std::format("/sys/fs/bpf/ebpf_probe/cpu{}/{}", cpu, event_name));
-            _event_iterators.emplace_back(_data, cpu, event_name, pinned_file_path);
-        }
-    }
-
     /* Initialize all RAPLIteratorBPF objects */
-    _rapl_iterators.reserve(_cpu_count * options.rapl.size());
-    for (const std::string& rapl_domain_name : options.rapl)
+    _rapl_iterators.reserve(RAPL_DOMAINS_MAX);
+    FOREACH_RAPL_DOMAIN(domain)
     {
-        _rapl_iterators.emplace_back(_data, rapl_domain_name_to_domain[rapl_domain_name]);
+        _rapl_iterators.emplace_back(_data, domain);
     }
 }
 

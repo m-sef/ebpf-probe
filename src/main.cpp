@@ -22,12 +22,7 @@ under /sys/fs/bpf/ebpf_probe/ and can be read with standard shell tools."
 
 #define NAME "ebpf_probe"
 
-options_t options = {
-    .interface       = {},
-    .event           = { "instructions", "cpu-cycles", "ref-cpu-cycles", "cache-misses" },
-    .rapl            = { "pkg", "cores", "uncore", "ram", "psys" },
-    .sample_interval = 1000,
-};
+options_t options = {};
 
 static volatile sig_atomic_t running = true;
 
@@ -50,32 +45,27 @@ int main(int argc, char** argv)
     app.add_option("-i,--interface", options.interface, 
         "Monitor the network traffic on this interface(s)")
         ->required();
-    app.add_option("-e,--event", options.event,
-        "Events")
-        ->capture_default_str();
-    app.add_option("-r,--rapl", options.rapl,
-        "RAPL")
-        ->capture_default_str();
     app.add_option("-f,--frequency", options.frequency,
         "Sample at this frequency per second for each CPU")
         ->default_val(20);
     app.add_flag("-v,--verbose", options.verbose,
         "Enable verbose output")
         ->default_val(false);
-    
-    app.add_option("-s,--sample-interval", options.sample_interval,
-        "Sample interval (milliseconds)")
-        ->default_val(1000);
-    
+
     CLI11_PARSE(app, argc, argv);
 
-    UserspaceLoader userspace_loader;
-    userspace_loader.init();
+    try {
+        UserspaceLoader userspace_loader;
+        userspace_loader.init();
 
-    while (running)
-        pause();
-    
-    puts("");
+        while (running)
+            pause();
+        
+        puts("");
+    } catch (const std::runtime_error& err) {
+        std::cout << std::format("[{} ERROR] {}", __FILE_NAME__, err.what()) << std::endl;
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
