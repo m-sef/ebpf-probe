@@ -25,7 +25,7 @@ sudo systemctl stop containerd && sudo systemctl disable containerd
 taskset -c 0 mutilate -vv --binary -s 10.10.1.1:11211 --loadonly -K fb_key -V fb_value
 
 # Run mutilate workload
-taskset -c 0 mutilate --binary -s 10.10.1.1:11211 --noload --agent={10.10.1.2,10.10.1.3} --threads=1 --keysize=fb_key --valuesize=fb_value --iadist=fb_ia --update=0.25 --depth=128 --measure_connections=32 --measure_qps=2000 --qps=100000 --time=60 >> mcd_11211.out
+taskset -c 0 mutilate --binary -s 10.10.1.1:11211 --noload --agent={10.10.1.2,10.10.1.3} --threads=1 --keysize=fb_key --valuesize=fb_value --iadist=fb_ia --update=0.25 --depth=128 --measure_connections=32 --measure_qps=2000 --qps=100000 --time=60 >> /tmp/leader.log
 ```
 
 ### worker0
@@ -36,7 +36,9 @@ sudo systemctl stop containerd && sudo systemctl disable containerd
 taskset -c 0-19 memcached -t 20 -m 32G -c 8192 -b 8192 -p 11211 -u nobody -B binary
 
 # Run eBPF Probe on the node's main interface and set sample frequency to every millisecond (1000 times a second)
-sudo ./build/ebpf_probe --interface=${WORKER0_IF} --frequency=1000
+sudo ./build/ebpf_probe --interface=${WORKER0_IF} --frequency=1000 &> /dev/null &
+
+sudo ./scripts/gather_data.py --interval=100 >> /tmp/summary.log
 ```
 
 ### worker1 & worker2
@@ -44,5 +46,5 @@ sudo ./build/ebpf_probe --interface=${WORKER0_IF} --frequency=1000
 sudo systemctl stop containerd && sudo systemctl disable containerd
 
 # Run mutilate workload generator as agent
-mutilate --agentmode --threads=16
+taskset -c 0 mutilate --agentmode --threads=16 >> /tmp/agent.log
 ```
