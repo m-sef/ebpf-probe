@@ -19,6 +19,8 @@ __CPU Governer is set "performance" on all nodes__
 
 ### master
 ```bash
+sudo systemctl stop containerd && sudo systemctl disable containerd
+
 # Load key, value pairs on Memcached server
 taskset -c 0 mutilate -vv --binary -s 10.10.1.1:11211 --loadonly -K fb_key -V fb_value
 
@@ -28,8 +30,10 @@ taskset -c 0 mutilate --binary -s 10.10.1.1:11211 --noload --agent={10.10.1.2,10
 
 ### worker0
 ```bash
+sudo systemctl stop containerd && sudo systemctl disable containerd
+
 # Run bare-metal Memcached
-memcached -t 20 -m 32G -c 8192 -b 8192 -p 11211 -u nobody -B binary
+taskset -c 0-19 memcached -t 20 -m 32G -c 8192 -b 8192 -p 11211 -u nobody -B binary
 
 # Run eBPF Probe on the node's main interface and set sample frequency to every millisecond (1000 times a second)
 sudo ./build/ebpf_probe --interface=${WORKER0_IF} --frequency=1000
@@ -37,6 +41,8 @@ sudo ./build/ebpf_probe --interface=${WORKER0_IF} --frequency=1000
 
 ### worker1 & worker2
 ```bash
+sudo systemctl stop containerd && sudo systemctl disable containerd
+
 # Run mutilate workload generator as agent
 mutilate --agentmode --threads=16
 ```
