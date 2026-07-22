@@ -1,5 +1,7 @@
 #include "data_bpf.hpp"
 
+#include <unordered_set>
+
 #include <linux/perf_event.h>
 #include <net/if.h>
 
@@ -64,8 +66,15 @@ DataBPF::_populate_perf_event_map_for_cpu(unsigned int cpu) const
 {
     fd_t perf_event_map_fd = bpf_map__fd(_bpf->maps.perf_event_map);
 
+    std::unordered_set<enum perf_events> active_perf_events = {
+        INSTRUCTIONS, CPU_CYCLES, REF_CPU_CYCLES, CACHE_MISSES
+    }; 
+
     FOREACH_PERF_EVENT(perf_event)
     {
+        if (!active_perf_events.contains(static_cast<enum perf_events>(perf_event)))
+            continue;
+        
         /* Attempt to open file descriptor for perf event, if it is not available
            then warn the user. If it is available, add it to the BPF perf event map */
         fd_t perf_event_fd = perf_event_open(&perf_events[perf_event], -1, cpu, -1, 0);
